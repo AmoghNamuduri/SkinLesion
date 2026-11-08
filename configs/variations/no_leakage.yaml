@@ -1,0 +1,12 @@
+# Example variation: same as the paper, but an image and its horizontal flip
+# are always kept on the same side of the train/test split (and CV folds).
+# Shows how much of the paper's ML / CNN score comes from flipped twins leaking
+# into the test set.
+base: ../paper.yaml
+
+paths:
+  features_file: data/features/global_features_no_leakage.h5
+  outputs_dir: outputs/variations/no_leakage
+
+data:
+  augment_before_split: false

@@ -1,0 +1,18 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# dataset — place it in data/raw/ (see data/README.md); generated folders are re-created by scripts
+data/*
+!data/README.md
+!data/raw/
+data/raw/*
+!data/raw/.gitkeep
+
+# generated artefacts
+outputs/*
+!outputs/.gitkeep
+*.pt
+*.part

@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkinLesion Code Map</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --ink: #1b1f24; --muted: #5d6673; --faint: #8a93a0;
+  --line: #d9dde3; --box: #ffffffcc; --pill: #ffffff; --pill-ink: #1b1f24; --shadow: 0 8px 28px rgba(20,30,45,.14);
+  --accent: #2f6fdb; --dim: .12;
+  --c-scripts: #6d4fe0; --c-configs: #c27c00; --c-utils: #557380; --c-data: #2f6fdb; --c-features: #0e8f7e;
+  --c-models: #c03c86; --c-training: #d9552a; --c-evaluation: #3f8f27; --c-tests: #8b6a3e;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12151a; --panel: #1b2027; --ink: #e8ebef; --muted: #a2abb7; --faint: #77818e;
+    --line: #2f3640; --box: #1b2027d9; --pill: #232a33; --pill-ink: #e8ebef; --shadow: 0 10px 32px rgba(0,0,0,.5);
+    --accent: #6b9cff; --dim: .14;
+    --c-scripts: #9b85ff; --c-configs: #e6a52e; --c-utils: #8fb0bd; --c-data: #6b9cff; --c-features: #3cc6b0;
+    --c-models: #ec6fb5; --c-training: #ff8257; --c-evaluation: #79c75c; --c-tests: #c9a26e;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12151a; --panel: #1b2027; --ink: #e8ebef; --muted: #a2abb7; --faint: #77818e;
+  --line: #2f3640; --box: #1b2027d9; --pill: #232a33; --pill-ink: #e8ebef; --shadow: 0 10px 32px rgba(0,0,0,.5);
+  --accent: #6b9cff; --dim: .14;
+  --c-scripts: #9b85ff; --c-configs: #e6a52e; --c-utils: #8fb0bd; --c-data: #6b9cff; --c-features: #3cc6b0;
+  --c-models: #ec6fb5; --c-training: #ff8257; --c-evaluation: #79c75c; --c-tests: #c9a26e;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+code, .mono { font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace; }
+
+header {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
+  padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel);
+}
+.title h1 { font-size: 17px; margin: 0; letter-spacing: -.01em; }
+.title p { margin: 2px 0 0; color: var(--muted); font-size: 12.5px; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button, .btn {
+  background: transparent; color: var(--ink); border: 0; padding: 6px 11px; font: inherit; font-size: 13px; cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.btn { border: 1px solid var(--line); border-radius: 8px; }
+.btn:hover, .seg button:hover:not([aria-pressed="true"]) { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+input[type="search"] {
+  border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 13px;
+  background: var(--bg); color: var(--ink); width: 170px;
+}
+.legend { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px;
+  border: 1px solid var(--line); font-size: 12px; cursor: pointer; background: var(--bg); color: var(--ink); font-family: inherit;
+}
+.chip i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+main { position: relative; flex: 1; min-height: 0; }
+svg#map { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; user-select: none; }
+svg#map.panning { cursor: grabbing; }
+
+.cluster-box { fill: var(--box); stroke-width: 1.5; }
+.cluster-head { font-weight: 650; font-size: 14px; fill: var(--ink); }
+.cluster-sub { font-size: 11px; fill: var(--faint); }
+.cluster-g { cursor: move; }
+.file-g { cursor: pointer; }
+.pill { fill: var(--pill); stroke: var(--line); }
+.pill-bar { }
+.pill-text { font-size: 11.5px; fill: var(--pill-ink); }
+.edge { fill: none; stroke-width: 1.4; opacity: .42; transition: opacity .15s; }
+.edge.cfg { stroke-dasharray: 5 4; }
+.edge-hit { fill: none; stroke: transparent; stroke-width: 9; cursor: help; }
+.agg-label { font-size: 11px; font-weight: 600; fill: var(--ink); }
+.agg-bg { fill: var(--panel); stroke: var(--line); }
+.compact { stroke-width: 2; }
+.compact-title { font-size: 15px; font-weight: 650; fill: var(--ink); }
+.compact-sub { font-size: 11.5px; fill: var(--muted); }
+
+svg.focus .cluster-g, svg.focus .file-g, svg.focus .edge, svg.focus .agg:not(.on) > g { opacity: var(--dim); }
+svg.focus .on { opacity: 1 !important; }
+svg.focus .edge.on { opacity: .95 !important; stroke-width: 2.2; }
+.file-g.match .pill { stroke: var(--accent); stroke-width: 2.5; }
+
+#tip {
+  position: absolute; z-index: 5; max-width: 400px; max-height: min(72vh, 620px); overflow: auto;
+  background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: var(--shadow); padding: 14px 16px; pointer-events: none; opacity: 0; transform: translateY(4px);
+  transition: opacity .12s, transform .12s; font-size: 13px;
+}
+#tip.show { opacity: 1; transform: none; }
+#tip.pinned { pointer-events: auto; }
+#tip h2 { font-size: 15.5px; margin: 0 0 2px; display: flex; align-items: center; gap: 8px; padding-right: 22px; }
+#tip h2 i { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+#tip .path { color: var(--faint); font-size: 11.5px; word-break: break-all; }
+#tip p { margin: 8px 0; color: var(--ink); }
+#tip h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 12px 0 5px; }
+#tip ul { margin: 0; padding-left: 18px; }
+#tip li { margin: 2px 0; }
+#tip li small { color: var(--muted); }
+#tip .kind { font-size: 10px; padding: 0 5px; border-radius: 4px; border: 1px solid var(--line); color: var(--muted); margin-right: 4px; }
+#tip .deps { display: flex; flex-wrap: wrap; gap: 5px; }
+#tip .deps span { font-size: 11.5px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); }
+#tip .close {
+  position: absolute; top: 9px; right: 10px; border: 0; background: transparent; color: var(--muted);
+  font-size: 18px; cursor: pointer; display: none; line-height: 1;
+}
+#tip.pinned .close { display: block; }
+#tip .hint { color: var(--faint); font-size: 11.5px; margin-top: 10px; }
+
+.footer-hint {
+  position: absolute; left: 16px; bottom: 12px; color: var(--faint); font-size: 12px; pointer-events: none;
+  background: color-mix(in srgb, var(--bg) 80%, transparent); padding: 4px 8px; border-radius: 6px;
+}
+.zoom { position: absolute; right: 16px; bottom: 12px; display: flex; flex-direction: column; gap: 6px; }
+.zoom .btn { background: var(--panel); width: 34px; height: 34px; padding: 0; font-size: 17px; }
+#err { padding: 40px 16px; color: var(--muted); }
+
+@media (max-width: 640px) {
+  .title p { display: none; }
+  .controls { margin-left: 0; width: 100%; }
+  input[type="search"] { flex: 1 1 100%; width: auto; min-width: 0; }
+  .legend { flex-wrap: nowrap; overflow-x: auto; }
+  .chip { flex: none; }
+  #tip { left: 8px !important; right: 8px; bottom: 8px; top: auto !important; max-width: none; max-height: 55vh; }
+  .footer-hint { display: none; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="title">
+    <h1>SkinLesion code map</h1>
+    <p id="subtitle">Reproduction of Shetty et al. (2022), Sci Rep 12:18134</p>
+  </div>
+  <div class="controls">
+    <input id="search" type="search" placeholder="Find a file or function…" aria-label="Find a file or function">
+    <div class="seg" role="group" aria-label="View">
+      <button id="v-files" aria-pressed="true">Files</button>
+      <button id="v-clusters" aria-pressed="false">Clusters</button>
+    </div>
+    <button class="btn" id="reset">Reset layout</button>
+    <button class="btn" id="theme" title="Switch theme">Theme: auto</button>
+  </div>
+  <div class="legend" id="legend" aria-label="Clusters"></div>
+</header>
+<main id="stage">
+  <svg id="map" aria-label="Dependency map of the SkinLesion codebase">
+    <defs id="defs"></defs>
+    <g id="viewport"><g id="edges"></g><g id="nodes"></g></g>
+  </svg>
+  <div id="tip" role="tooltip" aria-live="polite"></div>
+  <div class="footer-hint">Hover a cluster or file for details · click to pin · drag clusters · scroll to zoom · drag background to pan</div>
+  <div class="zoom"><button class="btn" id="zin" aria-label="Zoom in">+</button><button class="btn" id="zout" aria-label="Zoom out">−</button></div>
+</main>
+
+<script src="graph_data.js"></script>
+<script>
+(() => {
+  const G = window.GRAPH;
+  const stage = document.getElementById("stage");
+  if (!G) {
+    stage.innerHTML = '<p id="err">graph_data.js not found. Run <code>python mindmap/build_mindmap.py</code> from the repo root, then reload.</p>';
+    return;
+  }
+
+  // ---------- layout (cluster centres in a 1800×1150 virtual canvas) ----------
+  const LAYOUT = {
+    scripts:    { x: 900,  y: 120,  cols: 3 },
+    configs:    { x: 1480, y: 165,  cols: 1 },
+    tests:      { x: 330,  y: 165,  cols: 1 },
+    data:       { x: 250,  y: 600,  cols: 2 },
+    training:   { x: 900,  y: 560,  cols: 1 },
+    evaluation: { x: 1540, y: 600,  cols: 2 },
+    features:   { x: 520,  y: 1010, cols: 1 },
+    utils:      { x: 900,  y: 1030, cols: 1 },
+    models:     { x: 1290, y: 1010, cols: 1 },
+  };
+  const PILL_W = 168, PILL_H = 26, GAP = 8, PAD = 14, HEAD = 44, CW = 210, CH = 70;
+  const NS = "http://www.w3.org/2000/svg";
+
+  const nodes = new Map(G.nodes.map(n => [n.id, n]));
+  const clusters = new Map(G.clusters.map(c => [c.id, c]));
+  G.clusters.forEach(c => c.files.sort((a, b) => nodes.get(a).label.localeCompare(nodes.get(b).label)));
+  const out = new Map(), inc = new Map();
+  G.nodes.forEach(n => { out.set(n.id, []); inc.set(n.id, []); });
+  G.edges.forEach(e => { out.get(e.source).push(e); inc.get(e.target).push(e); });
+
+  let pos = {}; const resetPos = () => { pos = {}; for (const c of G.clusters) { const l = LAYOUT[c.id] || { x: 900, y: 560 }; pos[c.id] = { x: l.x, y: l.y }; } };
+  resetPos();
+  let mode = "files", view = { k: 1, x: 0, y: 0 }, pinned = null, hoverKey = null;
+
+  const color = cid => `var(--c-${cid})`;
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+  const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent && parent.appendChild(e); return e; };
+  const short = (s, n = 110) => (s && s.length > n ? s.slice(0, n - 1) + "…" : s || "");
+
+  // ---------- geometry ----------
+  function boxOf(cid) {
+    const c = clusters.get(cid), n = c.files.length, p = pos[cid];
+    if (mode === "clusters") return { x: p.x - CW / 2, y: p.y - CH / 2, w: CW, h: CH, cx: p.x, cy: p.y };
+    const cols = Math.min((LAYOUT[cid] || {}).cols || 1, n), rows = Math.ceil(n / cols);
+    const w = cols * PILL_W + (cols - 1) * GAP + 2 * PAD, h = HEAD + rows * PILL_H + (rows - 1) * GAP + PAD;
+    return { x: p.x - w / 2, y: p.y - h / 2, w, h, cx: p.x, cy: p.y, cols };
+  }
+  function fileRect(id) {
+    const n = nodes.get(id), b = boxOf(n.cluster), i = clusters.get(n.cluster).files.indexOf(id);
+    const col = i % b.cols, row = Math.floor(i / b.cols);
+    const x = b.x + PAD + col * (PILL_W + GAP), y = b.y + HEAD + row * (PILL_H + GAP);
+    return { x, y, w: PILL_W, h: PILL_H, cx: x + PILL_W / 2, cy: y + PILL_H / 2 };
+  }
+  function borderPoint(r, tx, ty, pad = 2) {
+    const dx = tx - r.cx, dy = ty - r.cy;
+    if (!dx && !dy) return { x: r.cx, y: r.cy };
+    const s = Math.min((r.w / 2 + pad) / Math.abs(dx || 1e-9), (r.h / 2 + pad) / Math.abs(dy || 1e-9));
+    return { x: r.cx + dx * s, y: r.cy + dy * s };
+  }
+  function curve(ra, rb, bend) {
+    const dx = rb.cx - ra.cx, dy = rb.cy - ra.cy, len = Math.hypot(dx, dy) || 1;
+    const qx = (ra.cx + rb.cx) / 2 - dy / len * bend * len, qy = (ra.cy + rb.cy) / 2 + dx / len * bend * len;
+    const a = borderPoint(ra, qx, qy), b = borderPoint(rb, qx, qy, 5);
+    return { d: `M${a.x.toFixed(1)},${a.y.toFixed(1)} Q${qx.toFixed(1)},${qy.toFixed(1)} ${b.x.toFixed(1)},${b.y.toFixed(1)}`,
+             mx: (a.x + 2 * qx + b.x) / 4, my: (a.y + 2 * qy + b.y) / 4 };
+  }
+
+  // ---------- markers ----------
+  const defs = document.getElementById("defs");
+  for (const c of G.clusters) {
+    const m = el("marker", { id: `arrow-${c.id}`, viewBox: "0 0 10 10", refX: "8", refY: "5", markerWidth: "7", markerHeight: "7", orient: "auto-start-reverse" }, defs);
+    el("path", { d: "M0,1 L9,5 L0,9 z", style: `fill:${color(c.id)}` }, m);
+  }
+
+  // ---------- render ----------
+  const gEdges = document.getElementById("edges"), gNodes = document.getElementById("nodes"), svg = document.getElementById("map");
+  const reg = { clusters: new Map(), files: new Map(), edges: [] };
+
+  function build() {
+    gEdges.innerHTML = ""; gNodes.innerHTML = ""; reg.clusters.clear(); reg.files.clear(); reg.edges = [];
+    if (mode === "files") {
+      G.edges.forEach((e, i) => {
+        const cid = nodes.get(e.source).cluster;
+        const g = el("g", { class: "edge-wrap", "data-edge": i }, gEdges);
+        const p = el("path", { class: "edge" + (e.kind === "import" ? "" : " cfg"), stroke: "", style: `stroke:${color(cid)}`, "marker-end": `url(#arrow-${cid})` }, g);
+        const hit = el("path", { class: "edge-hit" }, g);
+        reg.edges.push({ e, p, hit, g });
+      });
+    } else {
+      const agg = new Map();
+      G.edges.forEach(e => {
+        const a = nodes.get(e.source).cluster, b = nodes.get(e.target).cluster;
+        if (a === b) return;
+        const k = a + ">" + b; if (!agg.has(k)) agg.set(k, { a, b, n: 0, list: [] });
+        const r = agg.get(k); r.n++; r.list.push(e);
+      });
+      [...agg.values()].forEach((r, i) => {
+        const g = el("g", { class: "agg", "data-agg": r.a + ">" + r.b }, gEdges);
+        const p = el("path", { class: "edge", style: `stroke:${color(r.a)};stroke-width:${1.2 + r.n * .7}`, "marker-end": `url(#arrow-${r.a})` }, g);
+        const hit = el("path", { class: "edge-hit" }, g);
+        const lb = el("g", {}, g);
+        const bg = el("rect", { class: "agg-bg", rx: 8, width: 22, height: 16 }, lb);
+        const tx = el("text", { class: "agg-label", "text-anchor": "middle", dy: "4" }, lb); tx.textContent = r.n;
+        reg.edges.push({ agg: r, p, hit, g, lb });
+      });
+    }
+
+    for (const c of G.clusters) {
+      const g = el("g", { class: "cluster-g", "data-cluster": c.id, tabindex: 0 }, gNodes);
+      const parts = { g };
+      if (mode === "files") {
+        parts.rect = el("rect", { class: "cluster-box", rx: 14, style: `stroke:${color(c.id)}` }, g);
+        parts.dot = el("circle", { r: 5.5, style: `fill:${color(c.id)}` }, g);
+        parts.head = el("text", { class: "cluster-head" }, g); parts.head.textContent = c.name;
+        parts.sub = el("text", { class: "cluster-sub mono" }, g); parts.sub.textContent = c.folder;
+        for (const fid of c.files) {
+          const n = nodes.get(fid);
+          const fg = el("g", { class: "file-g", "data-file": fid, tabindex: 0 }, gNodes);
+          const pr = el("rect", { class: "pill", rx: 7, width: PILL_W, height: PILL_H }, fg);
+          const bar = el("rect", { class: "pill-bar", rx: 2, width: 4, height: PILL_H - 10, style: `fill:${color(c.id)}` }, fg);
+          const t = el("text", { class: "pill-text mono" }, fg); t.textContent = n.label;
+          reg.files.set(fid, { g: fg, pr, bar, t });
+        }
+      } else {
+        parts.rect = el("rect", { class: "cluster-box compact", rx: 14, style: `stroke:${color(c.id)}` }, g);
+        parts.dot = el("circle", { r: 6, style: `fill:${color(c.id)}` }, g);
+        parts.head = el("text", { class: "compact-title" }, g); parts.head.textContent = c.name;
+        parts.sub = el("text", { class: "compact-sub" }, g); parts.sub.textContent = `${c.files.length} files · ${c.loc} lines`;
+      }
+      reg.clusters.set(c.id, parts);
+    }
+    layout(); applyFocus(); applySearch();
+  }
+
+  function layout() {
+    for (const [cid, p] of reg.clusters) {
+      const b = boxOf(cid);
+      Object.entries({ x: b.x, y: b.y, width: b.w, height: b.h }).forEach(([k, v]) => p.rect.setAttribute(k, v));
+      if (mode === "files") {
+        p.dot.setAttribute("cx", b.x + 18); p.dot.setAttribute("cy", b.y + 19);
+        p.head.setAttribute("x", b.x + 30); p.head.setAttribute("y", b.y + 24);
+        p.sub.setAttribute("x", b.x + b.w - 12); p.sub.setAttribute("y", b.y + 24); p.sub.setAttribute("text-anchor", "end");
+        if (b.w < 260) p.sub.style.display = "none";
+      } else {
+        p.dot.setAttribute("cx", b.x + 20); p.dot.setAttribute("cy", b.y + 26);
+        p.head.setAttribute("x", b.x + 34); p.head.setAttribute("y", b.y + 31);
+        p.sub.setAttribute("x", b.x + 34); p.sub.setAttribute("y", b.y + 51);
+      }
+    }
+    for (const [fid, f] of reg.files) {
+      const r = fileRect(fid);
+      f.pr.setAttribute("x", r.x); f.pr.setAttribute("y", r.y);
+      f.bar.setAttribute("x", r.x + 6); f.bar.setAttribute("y", r.y + 5);
+      f.t.setAttribute("x", r.x + 16); f.t.setAttribute("y", r.y + 17.5);
+    }
+    for (const r of reg.edges) {
+      let c;
+      if (r.e) {
+        const ra = fileRect(r.e.source), rb = fileRect(r.e.target);
+        const same = nodes.get(r.e.source).cluster === nodes.get(r.e.target).cluster;
+        c = curve(ra, rb, same ? .55 : .12);
+      } else {
+        c = curve(boxOf(r.agg.a), boxOf(r.agg.b), .1);
+        r.lb.setAttribute("transform", `translate(${c.mx},${c.my})`);
+        r.lb.firstChild.setAttribute("x", -11); r.lb.firstChild.setAttribute("y", -8);
+      }
+      r.p.setAttribute("d", c.d); r.hit.setAttribute("d", c.d);
+    }
+  }
+
+  // ---------- view transform ----------
+  const vp = document.getElementById("viewport");
+  const applyView = () => vp.setAttribute("transform", `translate(${view.x},${view.y}) scale(${view.k})`);
+  function fit() {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const c of G.clusters) { const b = boxOf(c.id); x0 = Math.min(x0, b.x); y0 = Math.min(y0, b.y); x1 = Math.max(x1, b.x + b.w); y1 = Math.max(y1, b.y + b.h); }
+    const W = svg.clientWidth, H = svg.clientHeight, m = 30;
+    view.k = Math.min((W - 2 * m) / (x1 - x0), (H - 2 * m) / (y1 - y0), 1.6);
+    view.x = (W - (x1 - x0) * view.k) / 2 - x0 * view.k; view.y = (H - (y1 - y0) * view.k) / 2 - y0 * view.k;
+    applyView();
+  }
+  function zoomAt(f, cx, cy) {
+    const k = Math.max(.2, Math.min(4, view.k * f)); f = k / view.k;
+    view.x = cx - (cx - view.x) * f; view.y = cy - (cy - view.y) * f; view.k = k; applyView();
+  }
+  svg.addEventListener("wheel", e => { e.preventDefault(); const r = svg.getBoundingClientRect(); zoomAt(Math.exp(-e.deltaY * .0015), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  document.getElementById("zin").onclick = () => zoomAt(1.25, svg.clientWidth / 2, svg.clientHeight / 2);
+  document.getElementById("zout").onclick = () => zoomAt(.8, svg.clientWidth / 2, svg.clientHeight / 2);
+
+  // ---------- focus / highlight ----------
+  function related(key) {
+    const on = { clusters: new Set(), files: new Set(), edges: new Set() };
+    if (!key) return null;
+    const [type, id] = key.split(":");
+    if (type === "c") {
+      on.clusters.add(id); clusters.get(id).files.forEach(f => on.files.add(f));
+      reg.edges.forEach((r, i) => {
+        if (r.e) { const a = nodes.get(r.e.source).cluster, b = nodes.get(r.e.target).cluster;
+          if (a === id || b === id) { on.edges.add(i); on.files.add(r.e.source); on.files.add(r.e.target); on.clusters.add(a); on.clusters.add(b); } }
+        else if (r.agg.a === id || r.agg.b === id) { on.edges.add(i); on.clusters.add(r.agg.a); on.clusters.add(r.agg.b); }
+      });
+    } else if (type === "f") {
+      on.files.add(id); on.clusters.add(nodes.get(id).cluster);
+      reg.edges.forEach((r, i) => { if (r.e && (r.e.source === id || r.e.target === id)) {
+        on.edges.add(i); on.files.add(r.e.source); on.files.add(r.e.target);
+        on.clusters.add(nodes.get(r.e.source).cluster); on.clusters.add(nodes.get(r.e.target).cluster); } });
+    } else if (type === "e") {
+      const r = reg.edges[+id]; on.edges.add(+id);
+      if (r.e) { on.files.add(r.e.source); on.files.add(r.e.target); on.clusters.add(nodes.get(r.e.source).cluster); on.clusters.add(nodes.get(r.e.target).cluster); }
+      else { on.clusters.add(r.agg.a); on.clusters.add(r.agg.b); }
+    }
+    return on;
+  }
+  function applyFocus() {
+    const key = pinned || hoverKey, on = related(key);
+    svg.classList.toggle("focus", !!on);
+    for (const [cid, p] of reg.clusters) p.g.classList.toggle("on", !!on && on.clusters.has(cid));
+    for (const [fid, f] of reg.files) f.g.classList.toggle("on", !!on && on.files.has(fid));
+    reg.edges.forEach((r, i) => { const v = !!on && on.edges.has(i); r.p.classList.toggle("on", v); r.g.classList.toggle("on", v); });
+  }
+
+  // ---------- tooltip ----------
+  const tip = document.getElementById("tip");
+  const chipList = (counts) => counts.length ? `<div class="deps">${counts.map(([cid, n]) =>
+      `<span style="border-color:${color(cid)}">${esc(clusters.get(cid).name)} · ${n}</span>`).join("")}</div>` : `<small>none</small>`;
+  function clusterDeps(cid) {
+    const o = new Map(), i = new Map();
+    G.edges.forEach(e => { const a = nodes.get(e.source).cluster, b = nodes.get(e.target).cluster; if (a === b) return;
+      if (a === cid) o.set(b, (o.get(b) || 0) + 1); if (b === cid) i.set(a, (i.get(a) || 0) + 1); });
+    const s = m => [...m.entries()].sort((x, y) => y[1] - x[1]);
+    return { o: s(o), i: s(i) };
+  }
+  function clusterHTML(cid) {
+    const c = clusters.get(cid), d = clusterDeps(cid);
+    return `<h2><i style="background:${color(cid)}"></i>${esc(c.name)}</h2>
+      <div class="path mono">${esc(c.folder)} · ${c.files.length} files · ${c.loc} lines</div>
+      <p>${esc(c.description)}</p>
+      <h3>What it does</h3><ul>${c.functionalities.map(f => `<li>${esc(f)}</li>`).join("")}</ul>
+      <h3>Files</h3><ul>${c.files.map(fid => { const n = nodes.get(fid);
+        return `<li><code>${esc(n.label)}</code> <small>${esc(short(n.doc, 95))}</small></li>`; }).join("")}</ul>
+      <h3>Depends on →</h3>${chipList(d.o)}
+      <h3>Used by ←</h3>${chipList(d.i)}`;
+  }
+  function fileHTML(fid) {
+    const n = nodes.get(fid), c = clusters.get(n.cluster);
+    const sym = n.symbols.length ? `<h3>${n.kind === "yaml" ? "Sections" : "Defines"}</h3><ul>${n.symbols.map(s =>
+      `<li><span class="kind mono">${esc(s.kind)}</span><code>${esc(s.name)}</code>${s.doc ? ` <small>${esc(short(s.doc, 90))}</small>` : ""}</li>`).join("")}</ul>` : "";
+    const lst = (arr, key) => arr.length ? `<ul>${arr.map(e => `<li><code>${esc(nodes.get(e[key]).label)}</code> <small>${esc(clusters.get(nodes.get(e[key]).cluster).name)}${e.kind !== "import" ? " · " + esc(e.kind) : ""}</small></li>`).join("")}</ul>` : `<small>none</small>`;
+    return `<h2><i style="background:${color(n.cluster)}"></i><span class="mono">${esc(n.label)}</span></h2>
+      <div class="path mono">${esc(n.id)} · ${n.loc} lines · ${esc(c.name)}</div>
+      ${n.doc ? `<p>${esc(n.doc)}</p>` : ""}${sym}
+      <h3>Depends on →</h3>${lst(out.get(fid), "target")}
+      <h3>Used by ←</h3>${lst(inc.get(fid), "source")}`;
+  }
+  function edgeHTML(i) {
+    const r = reg.edges[i];
+    if (r.e) {
+      const a = nodes.get(r.e.source), b = nodes.get(r.e.target);
+      const verb = { import: "imports", "reads config": "reads", inherits: "inherits from" }[r.e.kind] || r.e.kind;
+      return `<h2><i style="background:${color(a.cluster)}"></i>Dependency</h2><p><code>${esc(a.label)}</code> ${verb} <code>${esc(b.label)}</code></p><div class="path mono">${esc(a.id)} → ${esc(b.id)}</div>`;
+    }
+    const A = clusters.get(r.agg.a), B = clusters.get(r.agg.b);
+    return `<h2><i style="background:${color(r.agg.a)}"></i>${esc(A.name)} → ${esc(B.name)}</h2><p>${r.agg.n} file-level dependencies:</p>
+      <ul>${r.agg.list.map(e => `<li><code>${esc(nodes.get(e.source).label)}</code> → <code>${esc(nodes.get(e.target).label)}</code></li>`).join("")}</ul>`;
+  }
+  function htmlFor(key) {
+    const [t, id] = key.split(":");
+    return t === "c" ? clusterHTML(id) : t === "f" ? fileHTML(id) : edgeHTML(+id);
+  }
+  function showTip(key, cx, cy) {
+    tip.innerHTML = `<button class="close" aria-label="Close">×</button>` + htmlFor(key) +
+      (pinned ? "" : `<div class="hint">Click to pin this card</div>`);
+    tip.classList.add("show"); tip.classList.toggle("pinned", !!pinned);
+    tip.querySelector(".close").onclick = () => { pinned = null; hideTip(); applyFocus(); };
+    placeTip(cx, cy);
+  }
+  function placeTip(cx, cy) {
+    if (window.innerWidth <= 640) return;
+    const r = stage.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+    let x = cx - r.left + 18, y = cy - r.top + 14;
+    if (x + w > r.width - 8) x = cx - r.left - w - 18;
+    if (y + h > r.height - 8) y = Math.max(8, r.height - h - 8);
+    tip.style.left = Math.max(8, x) + "px"; tip.style.top = Math.max(8, y) + "px";
+  }
+  const hideTip = () => tip.classList.remove("show", "pinned");
+
+  function keyFromTarget(t) {
+    const f = t.closest && t.closest("[data-file]"); if (f) return "f:" + f.dataset.file;
+    const c = t.closest && t.closest("[data-cluster]"); if (c) return "c:" + c.dataset.cluster;
+    const e = t.closest && t.closest("[data-edge]"); if (e) return "e:" + e.dataset.edge;
+    const a = t.closest && t.closest("[data-agg]");
+    if (a) return "e:" + reg.edges.findIndex(r => r.agg && r.agg.a + ">" + r.agg.b === a.dataset.agg);
+    return null;
+  }
+
+  // ---------- pointer: hover, pin, drag cluster, pan ----------
+  let drag = null;
+  svg.addEventListener("pointermove", e => {
+    if (drag) {
+      const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+      if (Math.hypot(dx, dy) > 3) drag.moved = true;
+      if (drag.type === "pan") { view.x = drag.vx + dx; view.y = drag.vy + dy; applyView(); }
+      else if (drag.moved) { pos[drag.cid].x = drag.px + dx / view.k; pos[drag.cid].y = drag.py + dy / view.k; layout(); }
+      return;
+    }
+    if (pinned) return;
+    const key = keyFromTarget(e.target);
+    if (key !== hoverKey) { hoverKey = key; applyFocus(); key ? showTip(key, e.clientX, e.clientY) : hideTip(); }
+    else if (key) placeTip(e.clientX, e.clientY);
+  });
+  svg.addEventListener("pointerleave", () => { if (!pinned && !drag) { hoverKey = null; hideTip(); applyFocus(); } });
+  svg.addEventListener("pointerdown", e => {
+    const key = keyFromTarget(e.target);
+    svg.setPointerCapture(e.pointerId);
+    if (key && key[0] !== "e") {
+      const cid = key[0] === "f" ? nodes.get(key.slice(2)).cluster : key.slice(2);
+      drag = { type: "node", key, cid, sx: e.clientX, sy: e.clientY, px: pos[cid].x, py: pos[cid].y, moved: false };
+    } else {
+      drag = { type: "pan", key, sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y, moved: false };
+      svg.classList.add("panning");
+    }
+  });
+  svg.addEventListener("pointerup", e => {
+    const d = drag; drag = null; svg.classList.remove("panning");
+    if (!d || d.moved) return;
+    if (d.key) { pinned = d.key; hoverKey = d.key; applyFocus(); showTip(d.key, e.clientX, e.clientY); }
+    else { pinned = null; hoverKey = null; hideTip(); applyFocus(); }
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { pinned = null; hoverKey = null; hideTip(); applyFocus(); } });
+  svg.addEventListener("focusin", e => {
+    const key = keyFromTarget(e.target); if (!key || pinned) return;
+    hoverKey = key; applyFocus(); const r = e.target.getBoundingClientRect(); showTip(key, r.right, r.top);
+  });
+
+  // ---------- header controls ----------
+  const legend = document.getElementById("legend");
+  for (const c of G.clusters) {
+    const b = document.createElement("button");
+    b.className = "chip"; b.innerHTML = `<i style="background:${color(c.id)}"></i>${esc(c.name)}`;
+    b.onmouseenter = () => { if (pinned) return; hoverKey = "c:" + c.id; applyFocus(); const r = b.getBoundingClientRect(); showTip(hoverKey, r.left, r.bottom); };
+    b.onmouseleave = () => { if (pinned) return; hoverKey = null; hideTip(); applyFocus(); };
+    b.onclick = () => { pinned = "c:" + c.id; applyFocus(); const r = b.getBoundingClientRect(); showTip(pinned, r.left, r.bottom); };
+    legend.appendChild(b);
+  }
+  const setMode = m => {
+    mode = m; pinned = null; hoverKey = null; hideTip();
+    document.getElementById("v-files").setAttribute("aria-pressed", m === "files");
+    document.getElementById("v-clusters").setAttribute("aria-pressed", m === "clusters");
+    build(); fit();
+  };
+  document.getElementById("v-files").onclick = () => setMode("files");
+  document.getElementById("v-clusters").onclick = () => setMode("clusters");
+  document.getElementById("reset").onclick = () => { resetPos(); layout(); fit(); };
+
+  const search = document.getElementById("search");
+  function applySearch() {
+    const q = search.value.trim().toLowerCase();
+    for (const [fid, f] of reg.files) {
+      const n = nodes.get(fid);
+      const hit = q && (fid.toLowerCase().includes(q) || n.symbols.some(s => s.name.toLowerCase().includes(q)) || (n.doc || "").toLowerCase().includes(q));
+      f.g.classList.toggle("match", !!hit);
+    }
+  }
+  search.addEventListener("input", applySearch);
+
+  const themes = ["auto", "light", "dark"]; let ti = 0;
+  try { ti = Math.max(0, themes.indexOf(localStorage.getItem("codemap-theme") || "auto")); } catch (_) {}
+  const applyTheme = () => {
+    const t = themes[ti];
+    if (t === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", t);
+    document.getElementById("theme").textContent = "Theme: " + t;
+    try { localStorage.setItem("codemap-theme", t); } catch (_) {}
+  };
+  document.getElementById("theme").onclick = () => { ti = (ti + 1) % themes.length; applyTheme(); };
+  applyTheme();
+
+  document.getElementById("subtitle").textContent =
+    `Reproduction of Shetty et al. (2022), Sci Rep 12:18134 · ${G.clusters.length} clusters · ${G.nodes.length} files · ${G.edges.length} dependencies`;
+
+  build(); fit();
+  window.addEventListener("resize", fit);
+
+  // deep link: index.html#c:data pins the "data" cluster, #f:<path> pins a file
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (h === "clusters") setMode("clusters");
+  if (/^[cf]:/.test(h) && (clusters.has(h.slice(2)) || nodes.has(h.slice(2)))) {
+    pinned = h; applyFocus();
+    const r = (h[0] === "c" ? reg.clusters.get(h.slice(2)).rect : reg.files.get(h.slice(2)).pr).getBoundingClientRect();
+    showTip(h, r.right, r.top);
+  }
+})();
+</script>
+</body>
+</html>
