@@ -82,4 +82,45 @@ def build_report(outputs_dir: str | Path) -> Path:
 
     path = out / "report.md"
     path.write_text("\n".join(md), encoding="utf-8")
+    build_original_report(out)
+    return path
+
+
+def build_original_report(outputs_dir: str | Path) -> Path:
+    """``outputs/report-original.md``: only the numbers published in the paper (no results of ours)."""
+    out = resolve(outputs_dir)
+    t4 = ref.TABLE4_ML_CV_ACCURACY
+    md = ["# Original paper results — Shetty et al. (2022), Sci Rep 12:18134", "",
+          "_Numbers copied verbatim from the published paper (doi:10.1038/s41598-022-22644-9). "
+          "Our reproduced numbers are in `report.md`._", "",
+          "## Setup reported in the paper", "",
+          "- Dataset: HAM10000, 10,015 images, 7 classes; subset of 100 images/class (700), "
+          "horizontal-flip augmentation → 200/class (1,400); 80/20 split (1,120 / 280)",
+          "- ML: 220×220 images; global features = colour histogram + Hu moments + Haralick texture (HDF5); "
+          "LR, LDA, KNN, DT, RF, NB, SVM; 10-fold cross-validation",
+          "- CNN: 96×96×3, pixels scaled to 0–1; Conv32 → 2×Conv64 → 2×Conv128 → Dense 1024 → softmax 7 "
+          "(BatchNorm, Dropout 0.25/0.5); Adam, lr 0.001–0.00001, batch 32, 150 epochs, categorical cross-entropy",
+          "- Environment: Python 3.7.9, Keras/TensorFlow, Windows 10, Intel i5, 8 GB RAM", "",
+          "## Table 4 — accuracy of the machine-learning models", "",
+          _row("Setting", *ref.ML_ORDER), _row(*["---"] * (1 + len(ref.ML_ORDER))),
+          _row("Without augmentation (100×7)", *[t4["without_augmentation"][m] for m in ref.ML_ORDER]),
+          _row("With horizontal flip (200×7)", *[t4["with_hflip_augmentation"][m] for m in ref.ML_ORDER]), "",
+          "## Table 5 — accuracy and weighted precision / recall / F1 (%)", "",
+          _row("Metric", *ref.TABLE5_SUMMARY), _row(*["---"] * (1 + len(ref.TABLE5_SUMMARY)))]
+    for k, label in (("accuracy", "Accuracy"), ("precision", "Precision"), ("recall", "Recall"), ("f1", "F1-score")):
+        md.append(_row(label, *[v[k] for v in ref.TABLE5_SUMMARY.values()]))
+    t6 = ref.TABLE6_CNN
+    md += ["", "## Table 6 — CNN training and testing", "", _row("", "Train", "Test"), _row("---", "---", "---"),
+           _row("Accuracy (%)", t6["train"]["accuracy"], t6["test"]["accuracy"]),
+           _row("Loss", t6["train"]["loss"], t6["test"]["loss"]), "",
+           "## Table 7 — CNN multi-class classification report (test set)", "",
+           _row("Class", "Precision", "Recall", "F1-score", "Support"), _row(*["---"] * 5)]
+    for lab, v in ref.TABLE7_CNN_REPORT.items():
+        md.append(_row(lab, v["precision"], v["recall"], v["f1"], v["support"]))
+    md += ["", "## Other reported results", "",
+           f"- Headline claim: CNN accuracy **{t6['train']['accuracy']} %** (this is the training accuracy in Table 6)",
+           f"- Pre-trained InceptionV3 for comparison: {ref.INCEPTION_V3_ACCURACY} %",
+           "- Best ML model: Random Forest (0.87321 with augmentation)", ""]
+    path = out / "report-original.md"
+    path.write_text("\n".join(md), encoding="utf-8")
     return path
