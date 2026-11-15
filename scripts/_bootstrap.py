@@ -12,9 +12,12 @@ sys.path.insert(0, str(ROOT / "src"))
 from skinlesion.utils import load_config, set_seed  # noqa: E402
 
 
-def parse_args(description: str, extra=None):
-    p = argparse.ArgumentParser(description=description)
-    p.add_argument("--config", default=str(ROOT / "configs" / "paper.yaml"), help="YAML config file")
+SKINGAN_CONFIG = str(ROOT / "configs" / "skingan" / "baseline.yaml")
+
+
+def parse_args(description: str, extra=None, default_config: str | None = None):
+    p = argparse.ArgumentParser(description=description, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("--config", default=default_config or str(ROOT / "configs" / "paper.yaml"), help="YAML config file")
     p.add_argument("--set", nargs="*", default=[], metavar="KEY=VALUE",
                    help="override config values, e.g. --set cnn.epochs=20 data.augment_before_split=false")
     if extra:

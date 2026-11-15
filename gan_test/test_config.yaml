@@ -1,0 +1,11 @@
+# Short smoke-test run of the baseline conditional StyleGAN2-ADA (option 3).
+# Same pipeline as the real baseline, just a ~100 kimg budget (~1.5–2 h on a Colab T4).
+base: ../configs/skingan/baseline.yaml
+
+paths:
+  gan_runs: outputs/gan/test        # the notebook points this at Google Drive
+
+gan:
+  kimg: 100          # real runs: 1,000 (lean plan)
+  snap: 5            # snapshot every 5 ticks = 20 kimg → 5 progress grids + .pkl files
+  batch: 16          # fits a 16 GB T4 at 256²

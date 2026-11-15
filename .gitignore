@@ -10,9 +10,16 @@ data/*
 !data/raw/
 data/raw/*
 !data/raw/.gitkeep
+# lesion-level split CSVs are small and shared by everyone
+!data/splits/
 
 # generated artefacts
 outputs/*
 !outputs/.gitkeep
 *.pt
+*.pkl
 *.part
+gan_test/output/
+
+# NVIDIA StyleGAN2-ADA is cloned by third_party/setup_stylegan.py, not committed
+third_party/stylegan2-ada-pytorch/

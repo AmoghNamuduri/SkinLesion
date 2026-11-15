@@ -1,0 +1,73 @@
+# ---------------------------------------------------------------------------
+# SkinGAN — baseline conditional StyleGAN2-ADA on HAM10000 (roadmap issue 06)
+# Inherits paths / classes from paper.yaml. skingan.yaml differs only by
+# gan.domain_loss.enabled. Override anything with --set key=value.
+# ---------------------------------------------------------------------------
+base: ../paper.yaml
+
+paths:
+  splits_dir: data/splits                         # lesion-level split CSVs (issue 03)
+  gan_dataset: data/gan/ham10000_256_7class.zip   # StyleGAN training archive (issue 04)
+  gan_runs: outputs/gan/baseline                  # StyleGAN run folders (.pkl snapshots, fakes grids)
+  synthetic_dir: data/synthetic/baseline          # generated images + manifest.csv (issue 08)
+  domain_classifier: outputs/domain_classifier/domain_classifier.pt   # issue 09
+
+split:                       # lesion-level, stratified by dx (issue 03)
+  val_size: 0.1
+  test_size: 0.2
+  seed: 340
+
+labels:
+  set: 7class                # 7class (akiec … vasc) | binary (malignant vs benign)
+  malignant: [mel, bcc, akiec]
+
+gan_data:                    # export for StyleGAN (issue 04)
+  resolution: 256            # 600×450 → centre-crop 450×450 → 256×256
+  format: jpg                # jpg keeps the archive ~200 MB (png ≈ 900 MB)
+  jpg_quality: 95
+  max_per_class: null        # e.g. 300 for a quick test archive
+  splits: [train]            # the GAN never sees val/test images
+
+gan:                         # passed to third_party/stylegan2-ada-pytorch/train.py (issue 02)
+  stylegan_dir: third_party/stylegan2-ada-pytorch
+  data: null                 # default: paths.gan_dataset
+  outdir: null               # default: paths.gan_runs
+  cfg: paper256              # must match the ffhq256 transfer source network
+  resume: ffhq256            # transfer learning from NVIDIA's FFHQ-256 model; "noresume" to train from scratch
+  kimg: 1000                 # lean plan: ~1,000 kimg is usually enough with transfer learning
+  batch: 16                  # fits a 16 GB GPU (T4) at 256²
+  gamma: null                # R1 weight; null = cfg default (paper256: 1)
+  mirror: true               # x-flips (lesions have no left/right)
+  aug: ada
+  target: 0.6                # SpineGAN setting
+  augpipe: bgcfnc            # SpineGAN setting
+  snap: 10                   # snapshot every 10 ticks (= 40 kimg)
+  metrics: none              # compute FID separately with scripts (issue 07)
+  seed: 0
+  gpus: 1
+  workers: 3
+  domain_loss:               # SkinGAN term (issue 10); off for the baseline
+    enabled: false
+    classifier: null         # default: paths.domain_classifier
+    weight: 0.1              # λ (SpineGAN: 0.1)
+
+domain_classifier:           # ImageNet DenseNet-121 (issue 09); also the synthetic-learning model
+  pretrained: true
+  image_size: 224
+  epochs: 20
+  batch_size: 32
+  lr: 0.001
+  class_weighted: true
+  max_nv: 1500               # cap the dominant nv class in training (null = keep all)
+  num_workers: 2
+  device: auto
+  seed: 0
+
+generate:                    # issue 08
+  network: null              # path to a .pkl (default: latest snapshot in paths.gan_runs)
+  policy: balanced           # balanced | match_real
+  per_class: 1000            # balanced: images per class
+  truncation: 1.0
+  seed0: 0
+  batch: 16
+  device: auto
