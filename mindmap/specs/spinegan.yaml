@@ -1,0 +1,292 @@
+# Code map of the reference repo https://github.com/Ethan-schonfeld/SpineGAN
+# Hand-curated from reading the source (imports checked against the files).
+# Node ids are repo paths; artifacts are data files that flow between scripts.
+id: spinegan
+title: SpineGAN (reference)
+subtitle: "Ethan-schonfeld/SpineGAN — conditional StyleGAN2-ADA + domain-classifier loss for spine radiographs"
+repo_url: https://github.com/Ethan-schonfeld/SpineGAN/blob/main/
+pill_w: 182
+
+statuses:
+  authored: {label: "Written by the SpineGAN authors", badge: "", style: solid}
+  original: {label: "NVIDIA StyleGAN2-ADA file, unchanged", badge: "NV", style: solid}
+  modified: {label: "NVIDIA file modified by SpineGAN", badge: "mod", style: accent}
+  copy:     {label: "Identical duplicate of the baseline file", badge: "copy", style: muted}
+  data:     {label: "Data file / artifact (not code)", badge: "", style: artifact}
+
+clusters:
+  - id: data_processing
+    name: Data processing
+    color: blue
+    folder: data_processing/
+    x: 230
+    y: 470
+    cols: 1
+    description: >-
+      Turns VinDr-SpineXR DICOM radiographs into 256×256 PNGs sorted by class, writes the label JSON StyleGAN
+      needs, and removes test-set images so the GAN never trains on them.
+    functionalities:
+      - "DICOM → numpy (pydicom), centre-crop to a square, resize to 256×256 (nearest neighbour)"
+      - "Sort images into class-0 (normal) / class-1 (abnormal) folders from annotations"
+      - "Rescale 16-bit intensities to 8-bit in place"
+      - "Binary label JSON (normal / abnormal) and 8-class lesion-type dataset.json"
+      - "Drop images with several different lesion types from the conditional set"
+      - "Remove every test-set image_id from the GAN training folder"
+      - "Bug: image_main.py saves to the literal string \"save_1\" + id instead of the --save_1 folder"
+
+  - id: stylegan
+    name: StyleGAN2-ADA (baseline GAN)
+    color: cyan
+    folder: stylegan2-ada-pytorch-main/
+    x: 900
+    y: 170
+    cols: 3
+    description: >-
+      NVIDIA's official StyleGAN2-ADA (PyTorch), unchanged. Trained conditionally on the spine PNGs, it is the
+      "standard GAN" arm of the comparison (AUC 0.814 when used for synthetic learning).
+    functionalities:
+      - "Conditional generator / discriminator (--cond=1) with mapping + synthesis networks"
+      - "Adaptive discriminator augmentation (--aug=ada --target=0.6 --augpipe=bgcfnc)"
+      - "Non-saturating logistic loss + R1 and path-length regularisation"
+      - "Training loop with EMA generator, snapshots every --snap ticks (8,000 kimg in SpineGAN)"
+      - "dataset_tool.py: pack images + dataset.json labels into a training archive"
+      - "generate.py: sample images for a chosen --class from a .pkl"
+      - "calc_metrics.py: FID, KID, precision/recall, PPL, IS"
+      - "Components are wired at runtime by dnnlib.construct_class_by_name (class names in train.py)"
+
+  - id: domainloss
+    name: SpineGAN (domain-loss GAN)
+    color: red
+    folder: domain-loss-stylegan2-ada-pytorch-main/
+    x: 1560
+    y: 300
+    cols: 1
+    description: >-
+      The paper's contribution. A full copy of StyleGAN2-ADA in which only training/loss.py changes: the generator
+      loss gets an extra term from a frozen normal/abnormal classifier. Synthetic-learning AUC 0.830 (vs 0.814).
+    functionalities:
+      - "Loads the trained SpineClassifier checkpoint (hard-coded PATH) at import time"
+      - "Crops generated 256² images to 224², copies 1 → 3 channels, ImageNet-normalises"
+      - "L_G = softplus(-D(G(z,c))) + 0.1 · BCE(classifier(G(z,c)), c)"
+      - "Every other file is an identical copy of the baseline"
+      - "Bug: generator output in [-1,1] is not rescaled to [0,1] before ImageNet normalisation"
+
+  - id: dp
+    name: DP StyleGAN (privacy variant)
+    color: indigo
+    folder: DL-stylegan2-ada-pytorch-main/
+    x: 1560
+    y: 760
+    cols: 1
+    description: >-
+      A third copy of StyleGAN2-ADA meant to be differentially private: batch size 1, Gaussian noise added to the
+      gradients, then gradient-norm clipping. A TensorFlow-Privacy notebook estimates ε for several noise levels.
+    functionalities:
+      - "Default batch size 1 (one example per step, like a microbatch)"
+      - "Adds N(0, 0.02²) noise to every gradient, then clips the global norm to 1.5"
+      - "noise_multiplier_optimization.py: ε vs noise multiplier (n=3773, δ=1/n) with tensorflow_privacy"
+      - "Caveat: noise before clipping and no per-sample clipping, so no formal DP-SGD guarantee"
+
+  - id: classifiers
+    name: Classifiers (domain + synthetic learning)
+    color: magenta
+    folder: abnormality_*/
+    x: 900
+    y: 1060
+    cols: 2
+    description: >-
+      ImageNet DenseNet-121 classifiers. The binary one serves twice: trained on real images it is the domain
+      classifier inside the SpineGAN loss; trained on generated images it is the synthetic-learning test.
+    functionalities:
+      - "DenseNet-121 (ImageNet) → Linear(1000→1) → Dropout 0.1 → Sigmoid"
+      - "Class-weighted BCE, Adam lr 1e-3, batch 32"
+      - "Augmentation: horizontal flip p=0.3, rotation ±5°, random resized crop 0.8–1.0"
+      - "Validation AUC on 600 random test images each epoch; best checkpoint saved"
+      - "Multi-label 8-class variant over the lesion types, with per-class weights"
+      - "Results: real 0.856, GAN 0.814, SpineGAN 0.830 AUC"
+
+  - id: artifacts
+    name: Data & artifacts
+    color: gray
+    folder: (files on disk)
+    x: 900
+    y: 650
+    cols: 2
+    description: >-
+      The data that flows between the scripts. The repo has no orchestration, so these files (and hard-coded paths)
+      are the glue that connects the steps.
+    functionalities:
+      - "Input: VinDr-SpineXR radiographs (1,470 abnormal / 2,303 normal) + annotations"
+      - "Intermediate: PNG training set + labels JSON, held-out test PNGs"
+      - "Models: classifier checkpoint (.pt) and GAN snapshots (.pkl)"
+      - "Outputs: generated images per class, GAN metrics, synthetic-learning AUC"
+
+nodes:
+  # --- data processing
+  - {id: data_processing/image_main.py, cluster: data_processing, status: authored,
+     doc: "CLI: convert VinDr DICOMs to 256×256 PNGs and sort them into normal / abnormal folders using the annotations CSV.",
+     symbols: ["args: DICOM, labels, save_0, save_1", "loop: dcm → crop_square → downsample(256) → save_as_png"]}
+  - {id: data_processing/image_processing.py, cluster: data_processing, status: authored,
+     doc: "Helper functions for image conversion.",
+     symbols: ["crop_square: centre-crop to the smaller side", "downsample_square_image: cv2.resize, INTER_NEAREST",
+               "save_as_png / read_png_to_npy", "convert_dicom_to_npy: pydicom pixel_array"]}
+  - {id: data_processing/scale_png.py, cluster: data_processing, status: authored,
+     doc: "Rescale 16-bit PNG intensities to 8-bit in place (divide by ceil(max/256)).", symbols: ["args: directory"]}
+  - {id: data_processing/make_abnormality_labels.py, cluster: data_processing, status: authored,
+     doc: "Write abnormality_labels.json: 0 for every normal image, 1 for every abnormal image.", symbols: []}
+  - {id: data_processing/make_conditional_labels.py, cluster: data_processing, status: authored,
+     doc: "Write dataset.json with 8 lesion-type classes (0 = No finding … 7 = Other lesions); delete images with mixed lesion types.",
+     symbols: []}
+  - {id: data_processing/remove_test_images.py, cluster: data_processing, status: authored,
+     doc: "Delete every image whose image_id is in the VinDr test annotations from the GAN training folder.", symbols: []}
+
+  # --- baseline StyleGAN2-ADA
+  - {id: stylegan2-ada-pytorch-main/train.py, label: train.py, cluster: stylegan, status: original,
+     doc: "Training entry point: parses CLI options, builds the config (class names for G, D, loss, augment, dataset) and launches the training loop.",
+     symbols: ["setup_training_loop_kwargs: --cond, --aug, --target, --augpipe, --kimg, --batch …", "main: click CLI"]}
+  - {id: stylegan2-ada-pytorch-main/training/training_loop.py, label: training_loop.py, cluster: stylegan, status: original,
+     doc: "Main loop: constructs networks, loss and augment pipe by class name; alternates G/D phases; EMA; ADA p-tuning; snapshots.",
+     symbols: ["training_loop(): batch_size, kimg, ada_target …", "phases Gmain / Greg / Dmain / Dreg"]}
+  - {id: stylegan2-ada-pytorch-main/training/loss.py, label: loss.py, cluster: stylegan, status: original,
+     doc: "StyleGAN2Loss: non-saturating logistic loss, R1 penalty, path-length regularisation, style mixing.",
+     symbols: ["class StyleGAN2Loss", "accumulate_gradients(phase, …)"]}
+  - {id: stylegan2-ada-pytorch-main/training/networks.py, label: networks.py, cluster: stylegan, status: original,
+     doc: "Generator (mapping + synthesis) and Discriminator architectures, conditional via a label embedding.",
+     symbols: ["class Generator", "class Discriminator", "MappingNetwork / SynthesisNetwork"]}
+  - {id: stylegan2-ada-pytorch-main/training/augment.py, label: augment.py, cluster: stylegan, status: original,
+     doc: "AugmentPipe: differentiable augmentations (blit, geom, color, filter, noise, cutout) with adaptive probability p.",
+     symbols: ["class AugmentPipe"]}
+  - {id: stylegan2-ada-pytorch-main/training/dataset.py, label: dataset.py, cluster: stylegan, status: original,
+     doc: "ImageFolderDataset: reads a folder or zip plus dataset.json labels.", symbols: ["class ImageFolderDataset"]}
+  - {id: stylegan2-ada-pytorch-main/dataset_tool.py, label: dataset_tool.py, cluster: stylegan, status: original,
+     doc: "Pack an image folder + dataset.json into the training archive (resize/crop options).", symbols: ["convert_dataset"]}
+  - {id: stylegan2-ada-pytorch-main/generate.py, label: generate.py, cluster: stylegan, status: original,
+     doc: "Generate images from a .pkl for given seeds, truncation ψ and --class.", symbols: ["generate_images"]}
+  - {id: stylegan2-ada-pytorch-main/calc_metrics.py, label: calc_metrics.py, cluster: stylegan, status: original,
+     doc: "Compute FID / KID / precision-recall / PPL / IS for a snapshot.", symbols: ["calc_metrics"]}
+  - {id: stylegan2-ada-pytorch-main/metrics/, label: metrics/, cluster: stylegan, status: original, kind: folder,
+     doc: "metric_main + frechet_inception_distance, kernel_inception_distance, precision_recall, perceptual_path_length, inception_score.",
+     symbols: []}
+  - {id: stylegan2-ada-pytorch-main/legacy.py, label: legacy.py, cluster: stylegan, status: original,
+     doc: "Load network pickles (including TF-era ones).", symbols: ["load_network_pkl"]}
+  - {id: stylegan2-ada-pytorch-main/torch_utils/, label: dnnlib/ + torch_utils/, cluster: stylegan, status: original, kind: folder,
+     doc: "Support libraries: EasyDict, construct_class_by_name, training_stats, custom CUDA ops (bias_act, upfirdn2d, conv2d_gradfix).",
+     symbols: []}
+
+  # --- SpineGAN domain-loss variant
+  - {id: domain-loss-stylegan2-ada-pytorch-main/training/loss.py, label: loss.py  (domain loss), cluster: domainloss, status: modified,
+     doc: "StyleGAN2Loss with the domain term: generator loss = softplus(-D) + 0.1 · BCE(SpineClassifier(crop224(G(z,c))), c).",
+     symbols: ["PATH = …/checkpoint_aug_19.pt (hard-coded)", "SpineClassifier = torch.load(PATH)",
+               "Gmain: loss_Gfinal = loss_Gmain + 0.1 · loss_domain"]}
+  - {id: domain-loss-stylegan2-ada-pytorch-main/training/training_loop.py, label: training_loop.py, cluster: domainloss, status: copy,
+     doc: "Identical to the baseline training loop (constructs the modified loss by class name).", symbols: []}
+  - {id: domain-loss-stylegan2-ada-pytorch-main/train.py, label: train.py, cluster: domainloss, status: copy,
+     doc: "Identical to the baseline train.py; run with --cond=1 --kimg=8000 --aug=ada --target=0.6 --augpipe=bgcfnc --snap=50.", symbols: []}
+  - {id: domain-loss-stylegan2-ada-pytorch-main/generate.py, label: generate.py, cluster: domainloss, status: copy,
+     doc: "Identical to baseline; used to generate SpineGAN images per class (--class=0/1).", symbols: []}
+
+  # --- DP variant
+  - {id: DL-stylegan2-ada-pytorch-main/training/training_loop.py, label: training_loop.py  (DP), cluster: dp, status: modified,
+     doc: "Before each optimiser step: grad += N(0, 0.02²) noise, then clip_grad_norm_(max_norm=1.5); batch_size default 1.",
+     symbols: ["line 292: Gaussian noise ×0.02", "line 293: clip_grad_norm_ 1.5"]}
+  - {id: DL-stylegan2-ada-pytorch-main/train.py, label: train.py  (batch=1), cluster: dp, status: modified,
+     doc: "Baseline train.py with the default batch size changed to 1.", symbols: []}
+  - {id: DL-stylegan2-ada-pytorch-main/training/loss.py, label: loss.py, cluster: dp, status: copy,
+     doc: "Identical to the baseline loss (no domain term).", symbols: []}
+  - {id: DL-stylegan2-ada-pytorch-main/noise_multiplier_optimization.py, label: noise_multiplier_optim.py, cluster: dp, status: authored,
+     doc: "Notebook export: ε vs noise multiplier using tensorflow_privacy.compute_dp_sgd_privacy (n=3773, batch 1, δ=1/n).",
+     symbols: []}
+
+  # --- classifiers
+  - {id: abnormality_classification/SpineClassifier.py, label: SpineClassifier.py, cluster: classifiers, status: authored,
+     doc: "Binary normal/abnormal DenseNet-121. Trained on real images → domain-loss checkpoint; trained on generated images → synthetic-learning AUC.",
+     symbols: ["preprocess: Resize 224, ImageNet Normalize", "transform_augment: flip / rotate / resized crop",
+               "BCELoss_class_weighted", "loop: val AUC each epoch, save best checkpoint_aug_<epoch>.pt"]}
+  - {id: abnormality_detection/SpineMultiClassifier.py, label: SpineMultiClassifier.py, cluster: classifiers, status: authored,
+     doc: "8-class multi-label DenseNet-121 trained on generated images per lesion type, evaluated on the real test set.",
+     symbols: ["per-class balanced weights", "loads generated/<lesion_type>/ folders"]}
+
+  # --- artifacts
+  - {id: art/vindr, label: VinDr-SpineXR DICOMs + CSV, cluster: artifacts, status: data, kind: artifact,
+     doc: "Input radiographs (DICOM) and annotations/train.csv, test.csv with lesion_type per image.", symbols: []}
+  - {id: art/png_train, label: PNG train set + labels, cluster: artifacts, status: data, kind: artifact,
+     doc: "256×256 8-bit PNGs (normal / abnormal folders) with abnormality_labels.json or dataset.json.", symbols: []}
+  - {id: art/png_test, label: Real test PNGs, cluster: artifacts, status: data, kind: artifact,
+     doc: "Held-out real test images; used to measure every classifier.", symbols: []}
+  - {id: art/clf_ckpt, label: checkpoint_aug_19.pt, cluster: artifacts, status: data, kind: artifact,
+     doc: "Best binary SpineClassifier trained on real data; loaded frozen by the domain loss.", symbols: []}
+  - {id: art/pkl, label: network-snapshot-*.pkl, cluster: artifacts, status: data, kind: artifact,
+     doc: "GAN snapshots from each training run (baseline, SpineGAN, DP).", symbols: []}
+  - {id: art/generated, label: Generated images / class, cluster: artifacts, status: data, kind: artifact,
+     doc: "Synthetic normal/abnormal (and 8 lesion-type) folders produced by generate.py.", symbols: []}
+  - {id: art/gan_metrics, label: FID / precision / recall, cluster: artifacts, status: data, kind: artifact,
+     doc: "SpineGAN had worse FID and precision but better recall than the baseline GAN.", symbols: []}
+  - {id: art/auc, label: Synthetic-learning AUC, cluster: artifacts, status: data, kind: artifact,
+     doc: "Real 0.856 · baseline GAN 0.814 · SpineGAN 0.830.", symbols: []}
+
+edges:
+  # data processing
+  - [data_processing/image_main.py, data_processing/image_processing.py, import]
+  - [art/vindr, data_processing/image_main.py, reads]
+  - [data_processing/image_main.py, art/png_train, writes]
+  - [data_processing/image_main.py, art/png_test, writes]
+  - [data_processing/scale_png.py, art/png_train, writes]
+  - [data_processing/make_abnormality_labels.py, art/png_train, writes]
+  - [art/vindr, data_processing/make_conditional_labels.py, reads]
+  - [data_processing/make_conditional_labels.py, art/png_train, writes]
+  - [art/vindr, data_processing/remove_test_images.py, reads]
+  - [data_processing/remove_test_images.py, art/png_train, writes]
+  # baseline StyleGAN internals
+  - [stylegan2-ada-pytorch-main/train.py, stylegan2-ada-pytorch-main/training/training_loop.py, import]
+  - [stylegan2-ada-pytorch-main/train.py, stylegan2-ada-pytorch-main/metrics/, import]
+  - [stylegan2-ada-pytorch-main/train.py, stylegan2-ada-pytorch-main/torch_utils/, import]
+  - [stylegan2-ada-pytorch-main/training/training_loop.py, stylegan2-ada-pytorch-main/training/loss.py, calls]
+  - [stylegan2-ada-pytorch-main/training/training_loop.py, stylegan2-ada-pytorch-main/training/networks.py, calls]
+  - [stylegan2-ada-pytorch-main/training/training_loop.py, stylegan2-ada-pytorch-main/training/augment.py, calls]
+  - [stylegan2-ada-pytorch-main/training/training_loop.py, stylegan2-ada-pytorch-main/training/dataset.py, calls]
+  - [stylegan2-ada-pytorch-main/training/training_loop.py, stylegan2-ada-pytorch-main/legacy.py, import]
+  - [stylegan2-ada-pytorch-main/training/training_loop.py, stylegan2-ada-pytorch-main/metrics/, import]
+  - [stylegan2-ada-pytorch-main/training/loss.py, stylegan2-ada-pytorch-main/torch_utils/, import]
+  - [stylegan2-ada-pytorch-main/training/networks.py, stylegan2-ada-pytorch-main/torch_utils/, import]
+  - [stylegan2-ada-pytorch-main/training/augment.py, stylegan2-ada-pytorch-main/torch_utils/, import]
+  - [stylegan2-ada-pytorch-main/generate.py, stylegan2-ada-pytorch-main/legacy.py, import]
+  - [stylegan2-ada-pytorch-main/calc_metrics.py, stylegan2-ada-pytorch-main/metrics/, import]
+  - [stylegan2-ada-pytorch-main/calc_metrics.py, stylegan2-ada-pytorch-main/legacy.py, import]
+  - [stylegan2-ada-pytorch-main/legacy.py, stylegan2-ada-pytorch-main/torch_utils/, import]
+  # baseline data flow
+  - [art/png_train, stylegan2-ada-pytorch-main/dataset_tool.py, reads]
+  - [art/png_train, stylegan2-ada-pytorch-main/train.py, reads]
+  - [stylegan2-ada-pytorch-main/train.py, art/pkl, writes]
+  - [art/pkl, stylegan2-ada-pytorch-main/generate.py, reads]
+  - [art/pkl, stylegan2-ada-pytorch-main/calc_metrics.py, reads]
+  - [stylegan2-ada-pytorch-main/generate.py, art/generated, writes]
+  - [stylegan2-ada-pytorch-main/calc_metrics.py, art/gan_metrics, writes]
+  # SpineGAN variant
+  - [domain-loss-stylegan2-ada-pytorch-main/train.py, domain-loss-stylegan2-ada-pytorch-main/training/training_loop.py, import]
+  - [domain-loss-stylegan2-ada-pytorch-main/training/training_loop.py, domain-loss-stylegan2-ada-pytorch-main/training/loss.py, calls]
+  - [domain-loss-stylegan2-ada-pytorch-main/training/loss.py, stylegan2-ada-pytorch-main/training/loss.py, copy, "modified copy of"]
+  - [domain-loss-stylegan2-ada-pytorch-main/training/training_loop.py, stylegan2-ada-pytorch-main/training/training_loop.py, copy]
+  - [domain-loss-stylegan2-ada-pytorch-main/train.py, stylegan2-ada-pytorch-main/train.py, copy]
+  - [domain-loss-stylegan2-ada-pytorch-main/generate.py, stylegan2-ada-pytorch-main/generate.py, copy]
+  - [art/clf_ckpt, domain-loss-stylegan2-ada-pytorch-main/training/loss.py, loads, "loads frozen classifier"]
+  - [art/png_train, domain-loss-stylegan2-ada-pytorch-main/train.py, reads]
+  - [domain-loss-stylegan2-ada-pytorch-main/train.py, art/pkl, writes]
+  - [art/pkl, domain-loss-stylegan2-ada-pytorch-main/generate.py, reads]
+  - [domain-loss-stylegan2-ada-pytorch-main/generate.py, art/generated, writes]
+  # DP variant
+  - [DL-stylegan2-ada-pytorch-main/train.py, DL-stylegan2-ada-pytorch-main/training/training_loop.py, import]
+  - [DL-stylegan2-ada-pytorch-main/training/training_loop.py, DL-stylegan2-ada-pytorch-main/training/loss.py, calls]
+  - [DL-stylegan2-ada-pytorch-main/training/training_loop.py, stylegan2-ada-pytorch-main/training/training_loop.py, copy, "modified copy of"]
+  - [DL-stylegan2-ada-pytorch-main/train.py, stylegan2-ada-pytorch-main/train.py, copy, "modified copy of"]
+  - [DL-stylegan2-ada-pytorch-main/training/loss.py, stylegan2-ada-pytorch-main/training/loss.py, copy]
+  - [DL-stylegan2-ada-pytorch-main/noise_multiplier_optimization.py, DL-stylegan2-ada-pytorch-main/training/training_loop.py, informs, "chooses noise level for"]
+  - [art/png_train, DL-stylegan2-ada-pytorch-main/train.py, reads]
+  - [DL-stylegan2-ada-pytorch-main/train.py, art/pkl, writes]
+  # classifiers
+  - [art/png_train, abnormality_classification/SpineClassifier.py, reads, "real training images"]
+  - [art/png_test, abnormality_classification/SpineClassifier.py, reads]
+  - [art/generated, abnormality_classification/SpineClassifier.py, reads, "synthetic training images"]
+  - [abnormality_classification/SpineClassifier.py, art/clf_ckpt, writes]
+  - [abnormality_classification/SpineClassifier.py, art/auc, writes]
+  - [art/generated, abnormality_detection/SpineMultiClassifier.py, reads]
+  - [art/png_test, abnormality_detection/SpineMultiClassifier.py, reads]

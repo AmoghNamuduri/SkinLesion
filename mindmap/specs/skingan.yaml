@@ -1,0 +1,323 @@
+# Planned architecture for SkinGAN (see docs/skingan/ROADMAP.md).
+# Node ids are repo paths. Status is updated automatically by build_mindmap.py:
+#   planned  → becomes "exists" as soon as the file is created in the repo
+#   extend   → existing file that a roadmap issue will modify
+#   exists   → already in the repo and reused as-is
+# `issue` points to docs/skingan/issues/<NN>-*.md
+id: skingan
+title: SkinGAN (planned)
+subtitle: "Planned SkinGAN code: reuse the reproduction, add StyleGAN2-ADA + domain loss + synthetic learning"
+pill_w: 182
+
+statuses:
+  exists:  {label: "Already in the repo, reused as-is", badge: "", style: solid}
+  extend:  {label: "Exists; a roadmap issue extends it", badge: "ext", style: accent}
+  planned: {label: "Planned: not written yet", badge: "", style: dashed}
+  data:    {label: "Data file / artifact (not code)", badge: "", style: artifact}
+
+clusters:
+  - id: scripts
+    name: CLI entry points
+    color: violet
+    folder: scripts/
+    x: 930
+    y: 110
+    cols: 4
+    description: "One thin script per SkinGAN stage, sharing the reproduction's --config / --set mechanism."
+    functionalities:
+      - "export_gan_dataset: HAM10000 train split → StyleGAN dataset (issue 04)"
+      - "train_gan: baseline or SkinGAN, chosen by config (issue 02)"
+      - "train_domain_classifier: DenseNet-121 on real images (issue 09)"
+      - "generate_synthetic: .pkl → class folders + manifest (issue 08)"
+      - "run_synthetic_learning: real / GAN / SkinGAN / mixed comparison (issue 12)"
+      - "compare_with_paper: also builds report-skingan.md (issue 14)"
+
+  - id: configs
+    name: Experiment configs
+    color: amber
+    folder: configs/skingan/
+    x: 1700
+    y: 160
+    cols: 1
+    description: "Every GAN and experiment setting in YAML; SkinGAN differs from the baseline by one switch (domain_loss.enabled)."
+    functionalities:
+      - "baseline.yaml: --cond, ADA target 0.6, augpipe bgcfnc, kimg, snap, resume"
+      - "skingan.yaml: inherits baseline + domain_loss {classifier_path, weight λ, task}"
+      - "synthetic_learning.yaml: training sources, set sizes, seeds"
+
+  - id: utils
+    name: Utilities
+    color: slate
+    folder: src/skinlesion/utils/
+    x: 160
+    y: 150
+    cols: 1
+    description: "Reused unchanged from the reproduction: config inheritance + overrides, seeding, paths."
+    functionalities:
+      - "load_config with base: inheritance and --set overrides"
+      - "set_seed for reproducible GAN / classifier runs"
+      - "Path resolution and JSON helpers"
+
+  - id: data
+    name: Data layer
+    color: blue
+    folder: src/skinlesion/data/
+    x: 190
+    y: 560
+    cols: 1
+    description: "The reproduction's data layer plus a lesion-level split and manifest-based loading of synthetic images."
+    functionalities:
+      - "Lesion-level, stratified train/val/test split; the GAN never sees val/test (issue 03)"
+      - "Binary malignant (mel, bcc, akiec) and 7-class label sets (issue 03)"
+      - "Optional ISIC 2018 Task 3 external test set download (issue 03)"
+      - "Load real, synthetic or mixed sets from a manifest (issue 08)"
+
+  - id: gan
+    name: GAN module (new)
+    color: red
+    folder: src/skinlesion/gan/
+    x: 620
+    y: 470
+    cols: 1
+    description: "Our own GAN code around the vendored StyleGAN2-ADA, in the same modular, config-driven style as the reproduction."
+    functionalities:
+      - "Export 450² centre crops → 256² + dataset.json for StyleGAN (issue 04)"
+      - "Launcher that turns a YAML config into StyleGAN train.py options (issue 02)"
+      - "DomainLoss: λ · BCE/CE(classifier((G+1)/2 → 224, ImageNet norm), c), classifier frozen (issue 10)"
+      - "Generate N images per class into our data layout (issue 08)"
+      - "FID / KID / precision-recall + per-class sample grids (issue 07)"
+
+  - id: third_party
+    name: StyleGAN2-ADA (vendored)
+    color: cyan
+    folder: third_party/stylegan2-ada-pytorch/
+    x: 1130
+    y: 470
+    cols: 2
+    description: >-
+      One vendored copy of NVIDIA StyleGAN2-ADA (SpineGAN keeps three). The only patch is a hook in loss.py that calls
+      our DomainLoss when the config enables it.
+    functionalities:
+      - "Conditional StyleGAN2 generator / discriminator with ADA"
+      - "loss.py: domain-loss hook (the single code change)"
+      - "dataset_tool.py, generate.py, calc_metrics.py used through our wrappers"
+
+  - id: models
+    name: Models
+    color: magenta
+    folder: src/skinlesion/models/
+    x: 1130
+    y: 1110
+    cols: 1
+    description: "Existing paper models plus an ImageNet DenseNet-121 that serves as both domain classifier and downstream classifier."
+    functionalities:
+      - "densenet.py: DenseNet-121, binary (sigmoid) or 7-class (softmax) head (issue 09)"
+      - "cnn.py: the Shetty et al. CNN, reused as a second downstream model"
+      - "ml_models.py: classical models for the parent-paper bridge (issue 13)"
+
+  - id: training
+    name: Training pipelines
+    color: orange
+    folder: src/skinlesion/training/
+    x: 520
+    y: 1100
+    cols: 2
+    description: "Existing reproduction loops plus the domain-classifier trainer and the synthetic-learning harness."
+    functionalities:
+      - "domain_classifier.py: class-weighted training, selection by validation AUC (issue 09)"
+      - "synthetic_learning.py: train on each source, test on the same real split, 3 seeds (issue 12)"
+      - "cnn_trainer / ml_trainer: re-run Shetty et al. with GAN images instead of flips (issue 13)"
+
+  - id: evaluation
+    name: Evaluation & reporting
+    color: green
+    folder: src/skinlesion/evaluation/
+    x: 1650
+    y: 650
+    cols: 1
+    description: "Adds probabilistic metrics and a SkinGAN report to the existing evaluation layer."
+    functionalities:
+      - "AUC (binary, macro OvR), balanced accuracy, bootstrap 95 % CIs, ROC plots (issue 05)"
+      - "report-skingan.md: GAN quality, synthetic-learning AUC, λ sweep, parent-paper bridge (issue 14)"
+      - "paper_reference.py: published numbers to compare against"
+
+  - id: privacy
+    name: Privacy (stretch)
+    color: indigo
+    folder: src/skinlesion/{evaluation,gan}/
+    x: 1650
+    y: 1060
+    cols: 1
+    description: "Checks that synthetic images aren't copies of patients' images, plus an optional correct DP-SGD discriminator."
+    functionalities:
+      - "Nearest-neighbour memorisation audit (synthetic → train vs test → train) (issue 15)"
+      - "DP-SGD on the discriminator with per-sample clipping + Opacus accountant (issue 16)"
+
+  - id: artifacts
+    name: Data & artifacts
+    color: gray
+    folder: data/ · outputs/
+    x: 1000
+    y: 790
+    cols: 2
+    description: "Files that connect the stages; each is produced by one module and consumed by others."
+    functionalities:
+      - "HAM10000 raw images + metadata (in place)"
+      - "Split CSVs, GAN training archive"
+      - "domain_classifier.pt, baseline and SkinGAN .pkl snapshots"
+      - "Synthetic image folders, results JSON, SkinGAN report"
+
+nodes:
+  # scripts
+  - {id: scripts/_bootstrap.py, cluster: scripts, status: exists, doc: "Shared --config / --set parsing and seeding."}
+  - {id: scripts/export_gan_dataset.py, cluster: scripts, status: planned, issue: 4, doc: "Export the train split as a StyleGAN dataset (binary or 7-class labels)."}
+  - {id: scripts/train_gan.py, cluster: scripts, status: planned, issue: 2, doc: "Train baseline or SkinGAN from a YAML config."}
+  - {id: scripts/train_domain_classifier.py, cluster: scripts, status: planned, issue: 9, doc: "Train and export the DenseNet domain classifier."}
+  - {id: scripts/generate_synthetic.py, cluster: scripts, status: planned, issue: 8, doc: "Generate a synthetic dataset from a .pkl (policy: balanced / match-real)."}
+  - {id: scripts/run_synthetic_learning.py, cluster: scripts, status: planned, issue: 12, doc: "Run the synthetic-learning comparison."}
+  - {id: scripts/compare_with_paper.py, cluster: scripts, status: extend, issue: 14, doc: "Rebuild reports; will also build report-skingan.md."}
+  - {id: scripts/run_all.py, cluster: scripts, status: exists, doc: "End-to-end reproduction of Shetty et al. (unchanged)."}
+
+  # configs
+  - {id: configs/paper.yaml, cluster: configs, status: exists, doc: "Paper-faithful reproduction config (unchanged)."}
+  - {id: configs/skingan/baseline.yaml, cluster: configs, status: planned, issue: 6, doc: "Baseline conditional StyleGAN2-ADA settings."}
+  - {id: configs/skingan/skingan.yaml, cluster: configs, status: planned, issue: 11, doc: "Inherits baseline; enables the domain loss."}
+  - {id: configs/skingan/synthetic_learning.yaml, cluster: configs, status: planned, issue: 12, doc: "Experiment grid for synthetic learning."}
+
+  # utils
+  - {id: src/skinlesion/utils/config.py, cluster: utils, status: exists, doc: "Config objects, YAML inheritance, overrides."}
+  - {id: src/skinlesion/utils/io.py, cluster: utils, status: exists, doc: "Paths and JSON."}
+  - {id: src/skinlesion/utils/seed.py, cluster: utils, status: exists, doc: "Global seeding."}
+
+  # data
+  - {id: src/skinlesion/data/download.py, cluster: data, status: extend, issue: 3, doc: "HAM10000 download; add the ISIC 2018 Task 3 test set."}
+  - {id: src/skinlesion/data/metadata.py, cluster: data, status: exists, doc: "Metadata + image index (unchanged)."}
+  - {id: src/skinlesion/data/splits.py, cluster: data, status: extend, issue: 3, doc: "Add lesion_level_split (grouped by lesion_id, stratified by dx)."}
+  - {id: src/skinlesion/data/dataset.py, cluster: data, status: extend, issue: 8, doc: "Load real / synthetic / mixed sets from a manifest."}
+  - {id: src/skinlesion/data/augmentation.py, cluster: data, status: exists, doc: "Keras-style augmenter (reused for classifiers)."}
+
+  # gan
+  - {id: src/skinlesion/gan/dataset_export.py, cluster: gan, status: planned, issue: 4, doc: "450² centre crop → 256², dataset.json, train split only."}
+  - {id: src/skinlesion/gan/train_gan.py, cluster: gan, status: planned, issue: 2, doc: "YAML → StyleGAN train.py launcher (cond, kimg, aug, resume, domain loss)."}
+  - {id: src/skinlesion/gan/domain_loss.py, cluster: gan, status: planned, issue: 10,
+     doc: "DomainLoss module: rescale [-1,1]→[0,1], resize 224, ImageNet norm, frozen classifier, BCE or CE × λ."}
+  - {id: src/skinlesion/gan/generate.py, cluster: gan, status: planned, issue: 8, doc: "Generate N images per class into data/synthetic/<run>/ + manifest."}
+  - {id: src/skinlesion/gan/gan_metrics.py, cluster: gan, status: planned, issue: 7, doc: "FID / KID / precision-recall wrapper + per-class grids."}
+
+  # vendored StyleGAN
+  - {id: third_party/stylegan2-ada-pytorch/train.py, label: train.py, cluster: third_party, status: planned, issue: 2, doc: "NVIDIA training entry point (vendored, unchanged)."}
+  - {id: third_party/stylegan2-ada-pytorch/training/training_loop.py, label: training_loop.py, cluster: third_party, status: planned, issue: 2, doc: "Unchanged training loop."}
+  - {id: third_party/stylegan2-ada-pytorch/training/loss.py, label: loss.py  (+hook), cluster: third_party, status: planned, issue: 10,
+     doc: "StyleGAN2Loss with one patch: Gmain adds DomainLoss when enabled."}
+  - {id: third_party/stylegan2-ada-pytorch/training/networks.py, label: networks.py, cluster: third_party, status: planned, issue: 2, doc: "Conditional G and D (unchanged)."}
+  - {id: third_party/stylegan2-ada-pytorch/dataset_tool.py, label: dataset_tool.py, cluster: third_party, status: planned, issue: 4, doc: "Packs our export into a training zip."}
+  - {id: third_party/stylegan2-ada-pytorch/generate.py, label: generate.py, cluster: third_party, status: planned, issue: 8, doc: "Reference generator script (our wrapper reuses its logic)."}
+  - {id: third_party/stylegan2-ada-pytorch/calc_metrics.py, label: calc_metrics.py, cluster: third_party, status: planned, issue: 7, doc: "FID / KID / PR implementation."}
+
+  # models
+  - {id: src/skinlesion/models/densenet.py, cluster: models, status: planned, issue: 9, doc: "ImageNet DenseNet-121 with binary or 7-class head."}
+  - {id: src/skinlesion/models/cnn.py, cluster: models, status: exists, doc: "Shetty et al. CNN (Table 2)."}
+  - {id: src/skinlesion/models/ml_models.py, cluster: models, status: exists, doc: "Table 1 classical models."}
+
+  # training
+  - {id: src/skinlesion/training/domain_classifier.py, cluster: training, status: planned, issue: 9, doc: "Train DenseNet on real train split; select by validation AUC; export .pt."}
+  - {id: src/skinlesion/training/synthetic_learning.py, cluster: training, status: planned, issue: 12, doc: "Real / GAN / SkinGAN / mixed → same real test set; seeds + CIs."}
+  - {id: src/skinlesion/training/cnn_trainer.py, cluster: training, status: exists, doc: "Reproduction CNN loop; reused for the parent-paper bridge (issue 13)."}
+  - {id: src/skinlesion/training/ml_trainer.py, cluster: training, status: exists, doc: "Reproduction ML loop; reused for the parent-paper bridge (issue 13)."}
+
+  # evaluation
+  - {id: src/skinlesion/evaluation/metrics.py, cluster: evaluation, status: extend, issue: 5, doc: "Add AUC, balanced accuracy, bootstrap CIs."}
+  - {id: src/skinlesion/evaluation/plots.py, cluster: evaluation, status: extend, issue: 5, doc: "Add ROC curves and sample-grid figures."}
+  - {id: src/skinlesion/evaluation/report.py, cluster: evaluation, status: extend, issue: 14, doc: "Add build_skingan_report()."}
+  - {id: src/skinlesion/evaluation/paper_reference.py, cluster: evaluation, status: exists, doc: "Published numbers (Shetty et al.; add SpineGAN AUCs for context)."}
+
+  # privacy
+  - {id: src/skinlesion/evaluation/memorization.py, cluster: privacy, status: planned, issue: 15, doc: "Nearest-neighbour memorisation audit."}
+  - {id: src/skinlesion/gan/dp_training.py, cluster: privacy, status: planned, issue: 16, doc: "Per-sample clipping + noise for D; Opacus ε accounting."}
+
+  # artifacts
+  - {id: art/ham10000, label: HAM10000 raw + metadata, cluster: artifacts, status: data, kind: artifact, doc: "data/raw/: 10,015 images + HAM10000_metadata.csv."}
+  - {id: art/splits, label: split CSVs (train/val/test), cluster: artifacts, status: data, kind: artifact, issue: 3, doc: "data/splits/ham10000_{train,val,test}.csv, lesion-level."}
+  - {id: art/gan_zip, label: GAN dataset zip (256²), cluster: artifacts, status: data, kind: artifact, issue: 4, doc: "Train-split images + dataset.json labels."}
+  - {id: art/clf_pt, label: domain_classifier.pt, cluster: artifacts, status: data, kind: artifact, issue: 9, doc: "Frozen classifier loaded by DomainLoss."}
+  - {id: art/pkl_base, label: baseline GAN .pkl, cluster: artifacts, status: data, kind: artifact, issue: 6, doc: "Best baseline snapshot."}
+  - {id: art/pkl_skin, label: SkinGAN .pkl, cluster: artifacts, status: data, kind: artifact, issue: 11, doc: "Best SkinGAN snapshot (best λ)."}
+  - {id: art/synthetic, label: data/synthetic/<run>/, cluster: artifacts, status: data, kind: artifact, issue: 8, doc: "Generated images per class + manifest.csv."}
+  - {id: art/results, label: report-skingan.md + results, cluster: artifacts, status: data, kind: artifact, issue: 14, doc: "outputs/synthetic_learning/results.json, outputs/report-skingan.md."}
+
+edges:
+  # scripts → library
+  - [scripts/export_gan_dataset.py, scripts/_bootstrap.py, import]
+  - [scripts/export_gan_dataset.py, src/skinlesion/gan/dataset_export.py, import]
+  - [scripts/train_gan.py, src/skinlesion/gan/train_gan.py, import]
+  - [scripts/train_domain_classifier.py, src/skinlesion/training/domain_classifier.py, import]
+  - [scripts/generate_synthetic.py, src/skinlesion/gan/generate.py, import]
+  - [scripts/run_synthetic_learning.py, src/skinlesion/training/synthetic_learning.py, import]
+  - [scripts/compare_with_paper.py, src/skinlesion/evaluation/report.py, import]
+  - [scripts/run_all.py, src/skinlesion/training/cnn_trainer.py, import]
+  - [scripts/_bootstrap.py, src/skinlesion/utils/config.py, import]
+  - [scripts/_bootstrap.py, src/skinlesion/utils/seed.py, import]
+  # configs
+  - [configs/skingan/skingan.yaml, configs/skingan/baseline.yaml, inherits]
+  - [configs/skingan/synthetic_learning.yaml, configs/paper.yaml, inherits]
+  - [src/skinlesion/gan/train_gan.py, configs/skingan/baseline.yaml, config, "reads config"]
+  - [src/skinlesion/gan/train_gan.py, configs/skingan/skingan.yaml, config, "reads config"]
+  - [src/skinlesion/training/synthetic_learning.py, configs/skingan/synthetic_learning.yaml, config, "reads config"]
+  # data layer
+  - [art/ham10000, src/skinlesion/data/metadata.py, reads]
+  - [src/skinlesion/data/splits.py, art/splits, writes]
+  - [src/skinlesion/data/download.py, src/skinlesion/utils/io.py, import]
+  - [src/skinlesion/data/dataset.py, src/skinlesion/data/augmentation.py, import]
+  # gan module
+  - [src/skinlesion/gan/dataset_export.py, src/skinlesion/data/metadata.py, import]
+  - [src/skinlesion/gan/dataset_export.py, src/skinlesion/data/splits.py, import]
+  - [art/splits, src/skinlesion/gan/dataset_export.py, reads]
+  - [src/skinlesion/gan/dataset_export.py, art/gan_zip, writes]
+  - [src/skinlesion/gan/dataset_export.py, third_party/stylegan2-ada-pytorch/dataset_tool.py, calls]
+  - [src/skinlesion/gan/train_gan.py, third_party/stylegan2-ada-pytorch/train.py, calls]
+  - [src/skinlesion/gan/train_gan.py, src/skinlesion/utils/config.py, import]
+  - [src/skinlesion/gan/domain_loss.py, src/skinlesion/models/densenet.py, import]
+  - [art/clf_pt, src/skinlesion/gan/domain_loss.py, loads, "loads frozen classifier"]
+  - [src/skinlesion/gan/generate.py, third_party/stylegan2-ada-pytorch/generate.py, calls]
+  - [src/skinlesion/gan/gan_metrics.py, third_party/stylegan2-ada-pytorch/calc_metrics.py, calls]
+  # vendored StyleGAN internals
+  - [third_party/stylegan2-ada-pytorch/train.py, third_party/stylegan2-ada-pytorch/training/training_loop.py, import]
+  - [third_party/stylegan2-ada-pytorch/training/training_loop.py, third_party/stylegan2-ada-pytorch/training/loss.py, calls]
+  - [third_party/stylegan2-ada-pytorch/training/training_loop.py, third_party/stylegan2-ada-pytorch/training/networks.py, calls]
+  - [third_party/stylegan2-ada-pytorch/training/loss.py, src/skinlesion/gan/domain_loss.py, import, "domain-loss hook"]
+  - [art/gan_zip, third_party/stylegan2-ada-pytorch/train.py, reads]
+  - [third_party/stylegan2-ada-pytorch/train.py, art/pkl_base, writes]
+  - [third_party/stylegan2-ada-pytorch/train.py, art/pkl_skin, writes]
+  - [art/pkl_base, src/skinlesion/gan/generate.py, reads]
+  - [art/pkl_skin, src/skinlesion/gan/generate.py, reads]
+  - [art/pkl_base, src/skinlesion/gan/gan_metrics.py, reads]
+  - [art/pkl_skin, src/skinlesion/gan/gan_metrics.py, reads]
+  - [src/skinlesion/gan/generate.py, art/synthetic, writes]
+  # domain classifier
+  - [src/skinlesion/training/domain_classifier.py, src/skinlesion/models/densenet.py, import]
+  - [src/skinlesion/training/domain_classifier.py, src/skinlesion/data/dataset.py, import]
+  - [src/skinlesion/training/domain_classifier.py, src/skinlesion/evaluation/metrics.py, import]
+  - [art/splits, src/skinlesion/training/domain_classifier.py, reads]
+  - [src/skinlesion/training/domain_classifier.py, art/clf_pt, writes]
+  # synthetic learning
+  - [src/skinlesion/training/synthetic_learning.py, src/skinlesion/models/densenet.py, import]
+  - [src/skinlesion/training/synthetic_learning.py, src/skinlesion/training/cnn_trainer.py, import]
+  - [src/skinlesion/training/synthetic_learning.py, src/skinlesion/data/dataset.py, import]
+  - [src/skinlesion/training/synthetic_learning.py, src/skinlesion/evaluation/metrics.py, import]
+  - [art/splits, src/skinlesion/training/synthetic_learning.py, reads]
+  - [art/synthetic, src/skinlesion/training/synthetic_learning.py, reads]
+  - [src/skinlesion/training/synthetic_learning.py, art/results, writes]
+  # parent-paper bridge (issue 13)
+  - [art/synthetic, src/skinlesion/training/cnn_trainer.py, reads, "GAN images instead of flips (issue 13)"]
+  - [art/synthetic, src/skinlesion/training/ml_trainer.py, reads, "GAN images instead of flips (issue 13)"]
+  - [src/skinlesion/training/cnn_trainer.py, src/skinlesion/models/cnn.py, import]
+  - [src/skinlesion/training/ml_trainer.py, src/skinlesion/models/ml_models.py, import]
+  - [src/skinlesion/training/cnn_trainer.py, src/skinlesion/data/dataset.py, import]
+  # evaluation & privacy
+  - [src/skinlesion/evaluation/report.py, src/skinlesion/evaluation/paper_reference.py, import]
+  - [src/skinlesion/evaluation/report.py, src/skinlesion/evaluation/plots.py, import]
+  - [art/results, src/skinlesion/evaluation/report.py, reads]
+  - [src/skinlesion/evaluation/report.py, art/results, writes]
+  - [art/synthetic, src/skinlesion/evaluation/memorization.py, reads]
+  - [src/skinlesion/evaluation/memorization.py, src/skinlesion/data/dataset.py, import]
+  - [src/skinlesion/gan/dp_training.py, third_party/stylegan2-ada-pytorch/training/training_loop.py, calls, "patches optimiser step"]

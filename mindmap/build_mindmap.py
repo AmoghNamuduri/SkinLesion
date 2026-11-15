@@ -1,5 +1,12 @@
 """Generate ``mindmap/graph_data.js`` for the interactive code map (``mindmap/index.html``).
 
+Three tabs are produced:
+* ``skinlesion`` — generated from this repo's code (below)
+* ``spinegan``   — the reference repo, hand-curated in ``mindmap/specs/spinegan.yaml``
+* ``skingan``    — our planned architecture, ``mindmap/specs/skingan.yaml``; planned
+                   files switch to "exists" automatically once they appear in the repo
+
+For the code-derived tab:
 Nodes   = every source file (Python modules, scripts, tests, YAML configs; package
           ``__init__`` files are folded into the modules they re-export).
 Clusters = the architectural blocks defined in ``CLUSTERS`` below.
@@ -281,18 +288,90 @@ def build():
         if m:
             edges.add((rp, rel((cfg.parent / m.group(1)).resolve()), "inherits"))
 
-    edges = [{"source": s, "target": t, "kind": k} for s, t, k in sorted(edges) if s in nodes and t in nodes]
+    edges = [{"source": s, "target": t, "kind": "config" if k == "reads config" else k,
+              "label": k if k == "reads config" else ""}
+             for s, t, k in sorted(edges) if s in nodes and t in nodes]
     clusters = []
     for cid, c in CLUSTERS.items():
         members = [n for n in nodes.values() if n["cluster"] == cid]
+        color, x, y, cols = SKINLESION_LAYOUT[cid]
         clusters.append({"id": cid, "name": c["name"], "description": c["description"],
                          "functionalities": c["functionalities"], "files": [n["id"] for n in members],
-                         "folder": c["match"][0], "loc": sum(n["loc"] for n in members)})
-    return {"clusters": clusters, "nodes": list(nodes.values()), "edges": edges}
+                         "folder": c["match"][0], "loc": sum(n["loc"] for n in members),
+                         "color": color, "x": x, "y": y, "cols": cols})
+    return {"id": "skinlesion", "title": "SkinLesion (current)",
+            "subtitle": "Reproduction of Shetty et al. (2022), Sci Rep 12:18134 (generated from the code)",
+            "pill_w": 168, "statuses": {}, "clusters": clusters, "nodes": list(nodes.values()), "edges": edges}
+
+
+# colour, x, y, columns for the code-derived SkinLesion map
+SKINLESION_LAYOUT = {
+    "scripts": ("violet", 900, 120, 3), "configs": ("amber", 1480, 165, 1), "tests": ("brown", 330, 165, 1),
+    "data": ("blue", 250, 600, 2), "training": ("orange", 900, 560, 1), "evaluation": ("green", 1540, 600, 2),
+    "features": ("teal", 520, 1010, 1), "utils": ("slate", 900, 1030, 1), "models": ("magenta", 1290, 1010, 1),
+}
+
+SPECS = Path(__file__).resolve().parent / "specs"
+
+
+def issue_link(num: int | None) -> str:
+    """Relative link (from mindmap/) to the roadmap issue file, if it exists."""
+    if not num:
+        return ""
+    hits = sorted((ROOT / "docs" / "skingan" / "issues").glob(f"{int(num):02d}-*.md"))
+    return f"../{rel(hits[0])}" if hits else ""
+
+
+def load_spec(path: Path) -> dict:
+    """Hand-curated graph (SpineGAN reference / SkinGAN plan) → the same shape as the code-derived graph."""
+    import yaml
+
+    spec = yaml.safe_load(path.read_text(encoding="utf-8"))
+    nodes = []
+    for n in spec["nodes"]:
+        status = n.get("status", "")
+        # a planned file that now exists in our repo is shown as done
+        if spec["id"] == "skingan" and status == "planned" and (ROOT / n["id"]).exists():
+            status = "exists"
+        label = n.get("label") or n["id"].rstrip("/").split("/")[-1]
+        url = (spec.get("repo_url", "") + n["id"]) if spec.get("repo_url") and n.get("kind") != "artifact" else ""
+        if spec["id"] == "skingan" and (ROOT / n["id"]).exists():
+            url = "../" + n["id"]
+        nodes.append({
+            "id": n["id"], "label": label, "cluster": n["cluster"], "kind": n.get("kind", "python"),
+            "status": status, "issue": n.get("issue"), "issue_url": issue_link(n.get("issue")), "url": url,
+            "doc": n.get("doc", ""), "constants": [], "loc": 0,
+            "symbols": [{"name": s.split(":")[0].strip(), "kind": "item",
+                         "doc": s.split(":", 1)[1].strip() if ":" in s else ""} for s in n.get("symbols", [])],
+        })
+    ids = {n["id"] for n in nodes}
+    edges = []
+    for e in spec["edges"]:
+        s, t, kind = e[0], e[1], e[2]
+        missing = [x for x in (s, t) if x not in ids]
+        if missing:
+            raise ValueError(f"{path.name}: edge refers to unknown node(s) {missing}")
+        edges.append({"source": s, "target": t, "kind": kind, "label": e[3] if len(e) > 3 else ""})
+    clusters = []
+    for c in spec["clusters"]:
+        members = [n for n in nodes if n["cluster"] == c["id"]]
+        issues = sorted({n["issue"] for n in members if n["issue"]})
+        clusters.append({**{k: c[k] for k in ("id", "name", "description", "functionalities", "folder", "color",
+                                             "x", "y", "cols")},
+                         "files": [n["id"] for n in members], "loc": 0, "issues": issues})
+    bad = [n["id"] for n in nodes if n["cluster"] not in {c["id"] for c in clusters}]
+    if bad:
+        raise ValueError(f"{path.name}: nodes with unknown cluster {bad}")
+    return {"id": spec["id"], "title": spec["title"], "subtitle": spec["subtitle"], "pill_w": spec.get("pill_w", 168),
+            "statuses": spec.get("statuses", {}), "clusters": clusters, "nodes": nodes, "edges": edges}
 
 
 if __name__ == "__main__":
-    graph = build()
-    OUT.write_text("// generated by mindmap/build_mindmap.py — do not edit by hand\nwindow.GRAPH = "
-                   + json.dumps(graph, indent=1, ensure_ascii=False) + ";\n", encoding="utf-8")
-    print(f"{len(graph['clusters'])} clusters, {len(graph['nodes'])} files, {len(graph['edges'])} dependencies -> {OUT}")
+    graphs = {"skinlesion": build()}
+    for name in ("spinegan", "skingan"):
+        graphs[name] = load_spec(SPECS / f"{name}.yaml")
+    OUT.write_text("// generated by mindmap/build_mindmap.py — do not edit by hand\nwindow.GRAPHS = "
+                   + json.dumps(graphs, indent=1, ensure_ascii=False) + ";\n", encoding="utf-8")
+    for g in graphs.values():
+        print(f"{g['id']:10s} {len(g['clusters'])} clusters, {len(g['nodes'])} nodes, {len(g['edges'])} edges")
+    print("->", OUT)
