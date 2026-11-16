@@ -1,18 +1,20 @@
-# Planned architecture for SkinGAN (see docs/skingan/ROADMAP.md).
+# SkinGAN architecture (see docs/skingan/ROADMAP.md).
 # Node ids are repo paths. Status is updated automatically by build_mindmap.py:
-#   planned  → becomes "exists" as soon as the file is created in the repo
-#   extend   → existing file that a roadmap issue will modify
-#   exists   → already in the repo and reused as-is
+#   planned  → shown as "new" as soon as the file exists in the repo
+#   extend   → reproduction file extended for SkinGAN
+#   exists   → reproduction file reused as-is
+# StyleGAN files stay "planned" until third_party/setup_stylegan.py has cloned them.
 # `issue` points to docs/skingan/issues/<NN>-*.md
 id: skingan
 title: SkinGAN (planned)
-subtitle: "Planned SkinGAN code: reuse the reproduction, add StyleGAN2-ADA + domain loss + synthetic learning"
+subtitle: "SkinGAN code: the reproduction + StyleGAN2-ADA + domain loss + synthetic learning"
 pill_w: 182
 
 statuses:
-  exists:  {label: "Already in the repo, reused as-is", badge: "", style: solid}
-  extend:  {label: "Exists; a roadmap issue extends it", badge: "ext", style: accent}
-  planned: {label: "Planned: not written yet", badge: "", style: dashed}
+  exists:  {label: "Reproduction file, reused as-is", badge: "", style: solid}
+  built:   {label: "Written for SkinGAN", badge: "new", style: accent}
+  extend:  {label: "Reproduction file extended for SkinGAN", badge: "ext", style: accent}
+  planned: {label: "Not in the repo yet (StyleGAN: cloned by setup_stylegan.py)", badge: "", style: dashed}
   data:    {label: "Data file / artifact (not code)", badge: "", style: artifact}
 
 clusters:
@@ -153,6 +155,20 @@ clusters:
       - "Nearest-neighbour memorisation audit (synthetic → train vs test → train) (issue 15)"
       - "DP-SGD on the discriminator with per-sample clipping + Opacus accountant (issue 16)"
 
+  - id: gan_test
+    name: GAN test (Colab)
+    color: teal
+    folder: gan_test/
+    x: 160
+    y: 900
+    cols: 1
+    description: "Short Colab smoke test of the baseline GAN (~100 kimg) that produces the first real-vs-generated pictures."
+    functionalities:
+      - "Colab notebook: GPU check → Drive → clone repo → StyleGAN setup → data → train → pictures"
+      - "test_config.yaml: baseline with a 100 kimg budget, snapshots every 20 kimg"
+      - "make_real_grid.py: laptop preview of the real 256² training images per class"
+      - "show_results.py: progression strip, real | generated grid, per-class grid"
+
   - id: artifacts
     name: Data & artifacts
     color: gray
@@ -175,6 +191,7 @@ nodes:
   - {id: scripts/train_domain_classifier.py, cluster: scripts, status: planned, issue: 9, doc: "Train and export the DenseNet domain classifier."}
   - {id: scripts/generate_synthetic.py, cluster: scripts, status: planned, issue: 8, doc: "Generate a synthetic dataset from a .pkl (policy: balanced / match-real)."}
   - {id: scripts/run_synthetic_learning.py, cluster: scripts, status: planned, issue: 12, doc: "Run the synthetic-learning comparison."}
+  - {id: scripts/audit_memorization.py, cluster: scripts, status: planned, issue: 15, doc: "Nearest-neighbour memorisation audit of a synthetic set."}
   - {id: scripts/compare_with_paper.py, cluster: scripts, status: extend, issue: 14, doc: "Rebuild reports; will also build report-skingan.md."}
   - {id: scripts/run_all.py, cluster: scripts, status: exists, doc: "End-to-end reproduction of Shetty et al. (unchanged)."}
 
@@ -202,9 +219,13 @@ nodes:
   - {id: src/skinlesion/gan/domain_loss.py, cluster: gan, status: planned, issue: 10,
      doc: "DomainLoss module: rescale [-1,1]→[0,1], resize 224, ImageNet norm, frozen classifier, BCE or CE × λ."}
   - {id: src/skinlesion/gan/generate.py, cluster: gan, status: planned, issue: 8, doc: "Generate N images per class into data/synthetic/<run>/ + manifest."}
-  - {id: src/skinlesion/gan/gan_metrics.py, cluster: gan, status: planned, issue: 7, doc: "FID / KID / precision-recall wrapper + per-class grids."}
+  - {id: src/skinlesion/gan/gan_metrics.py, cluster: gan, status: planned, issue: 7, doc: "FID / KID / precision-recall wrapper around StyleGAN's calc_metrics."}
+  - {id: src/skinlesion/gan/visualize.py, cluster: gan, status: planned, issue: 7, doc: "Image grids: real vs generated per class, training progression strips."}
 
   # vendored StyleGAN
+  - {id: third_party/setup_stylegan.py, label: setup_stylegan.py, cluster: third_party, status: planned, issue: 2,
+     doc: "Clones NVlabs/stylegan2-ada-pytorch and applies the two SkinGAN patches (domain-loss hook, conditional resume)."}
+  - {id: third_party/stylegan2-ada-pytorch/legacy.py, label: legacy.py, cluster: third_party, status: planned, issue: 2, doc: "Loads network pickles (used by our generator wrapper)."}
   - {id: third_party/stylegan2-ada-pytorch/train.py, label: train.py, cluster: third_party, status: planned, issue: 2, doc: "NVIDIA training entry point (vendored, unchanged)."}
   - {id: third_party/stylegan2-ada-pytorch/training/training_loop.py, label: training_loop.py, cluster: third_party, status: planned, issue: 2, doc: "Unchanged training loop."}
   - {id: third_party/stylegan2-ada-pytorch/training/loss.py, label: loss.py  (+hook), cluster: third_party, status: planned, issue: 10,
@@ -235,6 +256,13 @@ nodes:
   - {id: src/skinlesion/evaluation/memorization.py, cluster: privacy, status: planned, issue: 15, doc: "Nearest-neighbour memorisation audit."}
   - {id: src/skinlesion/gan/dp_training.py, cluster: privacy, status: planned, issue: 16, doc: "Per-sample clipping + noise for D; Opacus ε accounting."}
 
+  # GAN test
+  - {id: gan_test/SkinGAN_Colab_Test.ipynb, label: SkinGAN_Colab_Test.ipynb, cluster: gan_test, status: planned, kind: notebook,
+     doc: "Colab smoke test: setup, HAM10000 → 256² archive, ~100 kimg baseline training, pictures."}
+  - {id: gan_test/test_config.yaml, cluster: gan_test, status: planned, kind: yaml, doc: "Baseline config with kimg=100, snap=5."}
+  - {id: gan_test/make_real_grid.py, cluster: gan_test, status: planned, doc: "Laptop preview of the real training images per class."}
+  - {id: gan_test/show_results.py, cluster: gan_test, status: planned, doc: "progression.png, real_vs_generated.png, class_grid.png from a run."}
+
   # artifacts
   - {id: art/ham10000, label: HAM10000 raw + metadata, cluster: artifacts, status: data, kind: artifact, doc: "data/raw/: 10,015 images + HAM10000_metadata.csv."}
   - {id: art/splits, label: split CSVs (train/val/test), cluster: artifacts, status: data, kind: artifact, issue: 3, doc: "data/splits/ham10000_{train,val,test}.csv, lesion-level."}
@@ -259,7 +287,26 @@ edges:
   - [scripts/_bootstrap.py, src/skinlesion/utils/seed.py, import]
   # configs
   - [configs/skingan/skingan.yaml, configs/skingan/baseline.yaml, inherits]
-  - [configs/skingan/synthetic_learning.yaml, configs/paper.yaml, inherits]
+  - [configs/skingan/synthetic_learning.yaml, configs/skingan/baseline.yaml, inherits]
+  - [configs/skingan/baseline.yaml, configs/paper.yaml, inherits]
+  - [gan_test/test_config.yaml, configs/skingan/baseline.yaml, inherits]
+  # gan test
+  - [gan_test/SkinGAN_Colab_Test.ipynb, third_party/setup_stylegan.py, calls]
+  - [gan_test/SkinGAN_Colab_Test.ipynb, scripts/export_gan_dataset.py, calls]
+  - [gan_test/SkinGAN_Colab_Test.ipynb, scripts/train_gan.py, calls]
+  - [gan_test/SkinGAN_Colab_Test.ipynb, gan_test/show_results.py, calls]
+  - [gan_test/SkinGAN_Colab_Test.ipynb, gan_test/test_config.yaml, config, "reads config"]
+  - [gan_test/show_results.py, src/skinlesion/gan/generate.py, import]
+  - [gan_test/show_results.py, src/skinlesion/gan/visualize.py, import]
+  - [gan_test/make_real_grid.py, src/skinlesion/data/splits.py, import]
+  - [gan_test/make_real_grid.py, src/skinlesion/gan/visualize.py, import]
+  - [third_party/setup_stylegan.py, third_party/stylegan2-ada-pytorch/training/loss.py, writes, "patches"]
+  - [scripts/audit_memorization.py, src/skinlesion/evaluation/memorization.py, import]
+  - [scripts/export_gan_dataset.py, src/skinlesion/gan/visualize.py, import]
+  - [src/skinlesion/gan/train_gan.py, src/skinlesion/gan/domain_loss.py, import]
+  - [src/skinlesion/evaluation/report.py, src/skinlesion/gan/gan_metrics.py, import]
+  - [src/skinlesion/training/domain_classifier.py, src/skinlesion/gan/dataset_export.py, import]
+  - [src/skinlesion/training/domain_classifier.py, src/skinlesion/evaluation/plots.py, import]
   - [src/skinlesion/gan/train_gan.py, configs/skingan/baseline.yaml, config, "reads config"]
   - [src/skinlesion/gan/train_gan.py, configs/skingan/skingan.yaml, config, "reads config"]
   - [src/skinlesion/training/synthetic_learning.py, configs/skingan/synthetic_learning.yaml, config, "reads config"]
@@ -278,7 +325,7 @@ edges:
   - [src/skinlesion/gan/train_gan.py, src/skinlesion/utils/config.py, import]
   - [src/skinlesion/gan/domain_loss.py, src/skinlesion/models/densenet.py, import]
   - [art/clf_pt, src/skinlesion/gan/domain_loss.py, loads, "loads frozen classifier"]
-  - [src/skinlesion/gan/generate.py, third_party/stylegan2-ada-pytorch/generate.py, calls]
+  - [src/skinlesion/gan/generate.py, third_party/stylegan2-ada-pytorch/legacy.py, import]
   - [src/skinlesion/gan/gan_metrics.py, third_party/stylegan2-ada-pytorch/calc_metrics.py, calls]
   # vendored StyleGAN internals
   - [third_party/stylegan2-ada-pytorch/train.py, third_party/stylegan2-ada-pytorch/training/training_loop.py, import]
@@ -300,10 +347,8 @@ edges:
   - [art/splits, src/skinlesion/training/domain_classifier.py, reads]
   - [src/skinlesion/training/domain_classifier.py, art/clf_pt, writes]
   # synthetic learning
-  - [src/skinlesion/training/synthetic_learning.py, src/skinlesion/models/densenet.py, import]
-  - [src/skinlesion/training/synthetic_learning.py, src/skinlesion/training/cnn_trainer.py, import]
+  - [src/skinlesion/training/synthetic_learning.py, src/skinlesion/training/domain_classifier.py, import, "reuses fit_classifier"]
   - [src/skinlesion/training/synthetic_learning.py, src/skinlesion/data/dataset.py, import]
-  - [src/skinlesion/training/synthetic_learning.py, src/skinlesion/evaluation/metrics.py, import]
   - [art/splits, src/skinlesion/training/synthetic_learning.py, reads]
   - [art/synthetic, src/skinlesion/training/synthetic_learning.py, reads]
   - [src/skinlesion/training/synthetic_learning.py, art/results, writes]

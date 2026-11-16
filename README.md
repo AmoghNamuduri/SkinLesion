@@ -71,7 +71,25 @@ mindmap/       interactive map of the codebase (open mindmap/index.html)
 data/          dataset placeholder (git-ignored contents)
 ```
 
-Open **`mindmap/index.html`** in a browser for an interactive map. It groups the files into 9 clusters and draws a line for every dependency. Hover a cluster or file to see its description and functionality, and click to pin the card. The map is generated from the code itself: after you change files, re-run `python mindmap/build_mindmap.py`.
+Open **`mindmap/index.html`** in a browser for an interactive map with three tabs: this repo (generated from the code), the SpineGAN reference repo, and the SkinGAN architecture. Each tab groups files into clusters and draws a line for every dependency. Hover a cluster or file to see its description and functionality, and click to pin the card. After you change files, re-run `python mindmap/build_mindmap.py`.
+
+## SkinGAN (next phase)
+
+SkinGAN applies the [SpineGAN](https://github.com/Ethan-schonfeld/SpineGAN) recipe to HAM10000. It trains a conditional StyleGAN2-ADA, adds a domain-relevant loss from a frozen DenseNet-121, then tests whether classifiers trained only on synthetic images match ones trained on real images. The code is in `src/skinlesion/gan/`, `src/skinlesion/training/{domain_classifier,synthetic_learning}.py` and `configs/skingan/`, and the GAN steps need a CUDA GPU.
+
+```bash
+pip install -r requirements-gan.txt
+python third_party/setup_stylegan.py                       # clone NVIDIA StyleGAN2-ADA + SkinGAN patches
+python scripts/export_gan_dataset.py                       # lesion-level split + 256² training archive
+python scripts/train_gan.py                                # baseline GAN
+python scripts/train_domain_classifier.py                  # DenseNet-121 on real images
+python scripts/train_gan.py --config configs/skingan/skingan.yaml   # SkinGAN (domain loss)
+python scripts/generate_synthetic.py [--config configs/skingan/skingan.yaml]
+python scripts/run_synthetic_learning.py                   # real vs GAN vs SkinGAN, tested on real images
+python scripts/audit_memorization.py                       # are synthetic images copies?
+```
+
+For a first look on Google Colab, see **[`gan_test/`](gan_test/README.md)**: a ~100 kimg run that produces real-vs-generated pictures.
 
 ## Modularity — building variations
 

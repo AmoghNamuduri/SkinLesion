@@ -22,19 +22,25 @@ window.GRAPHS = {
     ],
     "files": [
      "scripts/_bootstrap.py",
+     "scripts/audit_memorization.py",
      "scripts/compare_with_paper.py",
      "scripts/download_data.py",
+     "scripts/export_gan_dataset.py",
+     "scripts/generate_synthetic.py",
      "scripts/prepare_data.py",
      "scripts/run_all.py",
      "scripts/run_cnn.py",
-     "scripts/run_ml.py"
+     "scripts/run_ml.py",
+     "scripts/run_synthetic_learning.py",
+     "scripts/train_domain_classifier.py",
+     "scripts/train_gan.py"
     ],
     "folder": "scripts/",
-    "loc": 103,
+    "loc": 226,
     "color": "violet",
     "x": 900,
     "y": 120,
-    "cols": 3
+    "cols": 4
    },
    {
     "id": "configs",
@@ -49,13 +55,16 @@ window.GRAPHS = {
     ],
     "files": [
      "configs/paper.yaml",
+     "configs/skingan/baseline.yaml",
+     "configs/skingan/skingan.yaml",
+     "configs/skingan/synthetic_learning.yaml",
      "configs/variations/no_leakage.yaml"
     ],
     "folder": "configs/",
-    "loc": 77,
+    "loc": 159,
     "color": "amber",
-    "x": 1480,
-    "y": 165,
+    "x": 1560,
+    "y": 150,
     "cols": 1
    },
    {
@@ -77,8 +86,8 @@ window.GRAPHS = {
     "folder": "src/skinlesion/utils/",
     "loc": 121,
     "color": "slate",
-    "x": 900,
-    "y": 1030,
+    "x": 820,
+    "y": 1060,
     "cols": 1
    },
    {
@@ -105,10 +114,10 @@ window.GRAPHS = {
      "src/skinlesion/data/splits.py"
     ],
     "folder": "src/skinlesion/data/",
-    "loc": 302,
+    "loc": 402,
     "color": "blue",
-    "x": 250,
-    "y": 600,
+    "x": 220,
+    "y": 580,
     "cols": 2
    },
    {
@@ -130,8 +139,8 @@ window.GRAPHS = {
     "folder": "src/skinlesion/features/",
     "loc": 57,
     "color": "teal",
-    "x": 520,
-    "y": 1010,
+    "x": 420,
+    "y": 1030,
     "cols": 1
    },
    {
@@ -148,13 +157,14 @@ window.GRAPHS = {
     ],
     "files": [
      "src/skinlesion/models/cnn.py",
+     "src/skinlesion/models/densenet.py",
      "src/skinlesion/models/ml_models.py"
     ],
     "folder": "src/skinlesion/models/",
-    "loc": 104,
+    "loc": 150,
     "color": "magenta",
-    "x": 1290,
-    "y": 1010,
+    "x": 1220,
+    "y": 1040,
     "cols": 1
    },
    {
@@ -172,14 +182,16 @@ window.GRAPHS = {
     ],
     "files": [
      "src/skinlesion/training/cnn_trainer.py",
-     "src/skinlesion/training/ml_trainer.py"
+     "src/skinlesion/training/domain_classifier.py",
+     "src/skinlesion/training/ml_trainer.py",
+     "src/skinlesion/training/synthetic_learning.py"
     ],
     "folder": "src/skinlesion/training/",
-    "loc": 189,
+    "loc": 373,
     "color": "orange",
     "x": 900,
     "y": 560,
-    "cols": 1
+    "cols": 2
    },
    {
     "id": "evaluation",
@@ -192,16 +204,46 @@ window.GRAPHS = {
      "build_report: outputs/report.md with paper and our numbers side by side"
     ],
     "files": [
+     "src/skinlesion/evaluation/memorization.py",
      "src/skinlesion/evaluation/metrics.py",
      "src/skinlesion/evaluation/paper_reference.py",
      "src/skinlesion/evaluation/plots.py",
      "src/skinlesion/evaluation/report.py"
     ],
     "folder": "src/skinlesion/evaluation/",
-    "loc": 224,
+    "loc": 370,
     "color": "green",
-    "x": 1540,
+    "x": 1580,
     "y": 600,
+    "cols": 2
+   },
+   {
+    "id": "gan",
+    "name": "GAN module (SkinGAN)",
+    "description": "SkinGAN code around the vendored NVIDIA StyleGAN2-ADA: dataset export, the YAML launcher, the domain-relevant loss, generation, metrics, image grids and the DP stretch goal.",
+    "functionalities": [
+     "Export the lesion-level train split as a 256² conditional StyleGAN archive (dataset.json labels)",
+     "Launch StyleGAN train.py from YAML; baseline vs SkinGAN differ by one switch",
+     "DomainLoss: λ · CE(frozen DenseNet(G(z,c)), c), with SpineGAN's preprocessing bugs fixed",
+     "Generate N images per class into class folders + manifest.csv",
+     "FID / KID / precision-recall via StyleGAN's calc_metrics",
+     "Real-vs-generated, per-class and training-progression image grids",
+     "Correct DP-SGD step (clip, then noise) + Opacus ε accounting"
+    ],
+    "files": [
+     "src/skinlesion/gan/dataset_export.py",
+     "src/skinlesion/gan/domain_loss.py",
+     "src/skinlesion/gan/dp_training.py",
+     "src/skinlesion/gan/gan_metrics.py",
+     "src/skinlesion/gan/generate.py",
+     "src/skinlesion/gan/train_gan.py",
+     "src/skinlesion/gan/visualize.py"
+    ],
+    "folder": "src/skinlesion/gan/",
+    "loc": 434,
+    "color": "red",
+    "x": 1230,
+    "y": 810,
     "cols": 2
    },
    {
@@ -216,13 +258,14 @@ window.GRAPHS = {
     "files": [
      "tests/conftest.py",
      "tests/test_pipeline.py",
+     "tests/test_skingan.py",
      "tests/test_units.py"
     ],
     "folder": "tests/",
-    "loc": 105,
+    "loc": 274,
     "color": "brown",
-    "x": 330,
-    "y": 165,
+    "x": 260,
+    "y": 150,
     "cols": 1
    }
   ],
@@ -271,13 +314,23 @@ window.GRAPHS = {
       "doc": ""
      },
      {
+      "name": "load_manifest",
+      "kind": "def",
+      "doc": "Read a manifest (columns: image_id, dx, path, …) from a CSV path, a folder containing"
+     },
+     {
+      "name": "dataset_from_manifest",
+      "kind": "def",
+      "doc": ""
+     },
+     {
       "name": "build_image_dataset",
       "kind": "def",
       "doc": "Images resized to size×size; if hflip (default: config) each image gets a mirrored twin."
      }
     ],
     "constants": [],
-    "loc": 33
+    "loc": 54
    },
    {
     "id": "src/skinlesion/data/download.py",
@@ -302,6 +355,11 @@ window.GRAPHS = {
       "doc": "Unzip every image archive into raw_dir/images (flat)."
      },
      {
+      "name": "download_isic2018_test",
+      "kind": "def",
+      "doc": "Optional external test set (1,512 images, same 7 classes) from the same Dataverse DOI (issue 03)."
+     },
+     {
       "name": "download",
       "kind": "def",
       "doc": ""
@@ -310,9 +368,10 @@ window.GRAPHS = {
     "constants": [
      "DATAVERSE_API",
      "WANTED",
-     "HEADERS"
+     "HEADERS",
+     "ISIC2018_TEST"
     ],
-    "loc": 90
+    "loc": 106
    },
    {
     "id": "src/skinlesion/data/metadata.py",
@@ -402,10 +461,68 @@ window.GRAPHS = {
       "name": "split_indices",
       "kind": "def",
       "doc": ""
+     },
+     {
+      "name": "lesion_level_split",
+      "kind": "def",
+      "doc": "Add a split column (train/val/test) so that every lesion_id sits in exactly one split."
+     },
+     {
+      "name": "save_splits",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "load_split",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "ensure_splits",
+      "kind": "def",
+      "doc": "Load the split CSVs, creating them from the metadata if they don't exist yet."
+     },
+     {
+      "name": "class_names",
+      "kind": "def",
+      "doc": "Class order used by the GAN labels and every classifier."
+     },
+     {
+      "name": "encode_labels",
+      "kind": "def",
+      "doc": "Diagnosis codes → integer labels for the configured label set (7class or binary)."
+     }
+    ],
+    "constants": [
+     "SPLIT_NAMES"
+    ],
+    "loc": 85
+   },
+   {
+    "id": "src/skinlesion/evaluation/memorization.py",
+    "label": "memorization.py",
+    "cluster": "evaluation",
+    "kind": "python",
+    "doc": "Memorisation audit: are synthetic images copies of training patients? (roadmap issue 15)",
+    "symbols": [
+     {
+      "name": "embed",
+      "kind": "def",
+      "doc": "images: (N,H,W,3) uint8 RGB → L2-normalised features."
+     },
+     {
+      "name": "nearest_neighbors",
+      "kind": "def",
+      "doc": "Cosine distance (1 − cos) from each query row to its nearest reference row, and that row's index."
+     },
+     {
+      "name": "audit",
+      "kind": "def",
+      "doc": "Compare synthetic→train with test→train nearest-neighbour distances."
      }
     ],
     "constants": [],
-    "loc": 22
+    "loc": 48
    },
    {
     "id": "src/skinlesion/evaluation/metrics.py",
@@ -418,10 +535,25 @@ window.GRAPHS = {
       "name": "classification_metrics",
       "kind": "def",
       "doc": ""
+     },
+     {
+      "name": "auc_score",
+      "kind": "def",
+      "doc": "Binary AUC (proba: (N,2) or (N,)) or macro one-vs-rest AUC for K classes (proba: (N,K))."
+     },
+     {
+      "name": "probabilistic_metrics",
+      "kind": "def",
+      "doc": "AUC (binary or macro-OvR + per class), balanced accuracy, and the hard-label report."
+     },
+     {
+      "name": "bootstrap_ci",
+      "kind": "def",
+      "doc": "Percentile bootstrap 95 % CI of metric(y_true, proba) over test examples."
      }
     ],
     "constants": [],
-    "loc": 18
+    "loc": 58
    },
    {
     "id": "src/skinlesion/evaluation/paper_reference.py",
@@ -436,9 +568,10 @@ window.GRAPHS = {
      "TABLE5_SUMMARY",
      "TABLE6_CNN",
      "TABLE7_CNN_REPORT",
-     "INCEPTION_V3_ACCURACY"
+     "INCEPTION_V3_ACCURACY",
+     "SPINEGAN_AUC"
     ],
-    "loc": 40
+    "loc": 43
    },
    {
     "id": "src/skinlesion/evaluation/plots.py",
@@ -458,6 +591,11 @@ window.GRAPHS = {
       "doc": ""
      },
      {
+      "name": "plot_roc",
+      "kind": "def",
+      "doc": "Binary ROC, or one-vs-rest ROC per class (issue 05)."
+     },
+     {
       "name": "plot_paper_vs_ours",
       "kind": "def",
       "doc": ""
@@ -467,7 +605,7 @@ window.GRAPHS = {
      "PAPER_COLOR",
      "OURS_COLOR"
     ],
-    "loc": 54
+    "loc": 69
    },
    {
     "id": "src/skinlesion/evaluation/report.py",
@@ -482,13 +620,18 @@ window.GRAPHS = {
       "doc": ""
      },
      {
+      "name": "build_skingan_report",
+      "kind": "def",
+      "doc": "outputs/report-skingan.md from whatever SkinGAN results exist (roadmap issue 14)."
+     },
+     {
       "name": "build_original_report",
       "kind": "def",
       "doc": "outputs/report-original.md: only the numbers published in the paper (no results of ours)."
      }
     ],
     "constants": [],
-    "loc": 112
+    "loc": 152
    },
    {
     "id": "src/skinlesion/features/descriptors.py",
@@ -545,6 +688,226 @@ window.GRAPHS = {
     "loc": 28
    },
    {
+    "id": "src/skinlesion/gan/dataset_export.py",
+    "label": "dataset_export.py",
+    "cluster": "gan",
+    "kind": "python",
+    "doc": "Export HAM10000 as a conditional StyleGAN2-ADA training archive (roadmap issue 04).",
+    "symbols": [
+     {
+      "name": "center_crop_resize",
+      "kind": "def",
+      "doc": "Centre square crop + area resize. Returns RGB uint8."
+     },
+     {
+      "name": "load_rgb",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "encode_image",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "select_rows",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "export_stylegan_dataset",
+      "kind": "def",
+      "doc": "Write the training archive; returns a summary (path, image count, per-class counts)."
+     },
+     {
+      "name": "read_archive_labels",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "read_archive_image",
+      "kind": "def",
+      "doc": ""
+     }
+    ],
+    "constants": [],
+    "loc": 74
+   },
+   {
+    "id": "src/skinlesion/gan/domain_loss.py",
+    "label": "domain_loss.py",
+    "cluster": "gan",
+    "kind": "python",
+    "doc": "SkinGAN domain-relevant generator loss (roadmap issue 10).",
+    "symbols": [
+     {
+      "name": "DomainLoss",
+      "kind": "class",
+      "doc": ""
+     },
+     {
+      "name": "class_map_for",
+      "kind": "def",
+      "doc": "Map GAN class indices to classifier targets when the label sets differ."
+     }
+    ],
+    "constants": [],
+    "loc": 70
+   },
+   {
+    "id": "src/skinlesion/gan/dp_training.py",
+    "label": "dp_training.py",
+    "cluster": "gan",
+    "kind": "python",
+    "doc": "Differentially-private training utilities (roadmap issue 16, stretch).",
+    "symbols": [
+     {
+      "name": "dp_step_",
+      "kind": "def",
+      "doc": "In place: clip the total gradient norm to max_norm, then add N(0, (σ·C)²) noise and"
+     },
+     {
+      "name": "epsilon",
+      "kind": "def",
+      "doc": "ε for DP-SGD via Opacus' RDP accountant (pip install opacus)."
+     },
+     {
+      "name": "steps_for_kimg",
+      "kind": "def",
+      "doc": "Number of discriminator steps for a StyleGAN budget in kimg."
+     }
+    ],
+    "constants": [],
+    "loc": 35
+   },
+   {
+    "id": "src/skinlesion/gan/gan_metrics.py",
+    "label": "gan_metrics.py",
+    "cluster": "gan",
+    "kind": "python",
+    "doc": "GAN quality metrics through StyleGAN's own calc_metrics.py (roadmap issue 07).",
+    "symbols": [
+     {
+      "name": "calc_metrics",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "read_metrics",
+      "kind": "def",
+      "doc": "{metric: value} from the metric-*.jsonl files in a run folder (latest entry per metric)."
+     }
+    ],
+    "constants": [
+     "QUICK",
+     "FULL"
+    ],
+    "loc": 34
+   },
+   {
+    "id": "src/skinlesion/gan/generate.py",
+    "label": "generate.py",
+    "cluster": "gan",
+    "kind": "python",
+    "doc": "Generate synthetic datasets from a StyleGAN snapshot (roadmap issue 08).",
+    "symbols": [
+     {
+      "name": "load_generator",
+      "kind": "def",
+      "doc": "Load the EMA generator from a StyleGAN .pkl (needs the vendored code on sys.path to unpickle)."
+     },
+     {
+      "name": "generate_images",
+      "kind": "def",
+      "doc": "Generate one image per seed for class_idx. Returns (N, H, W, 3) uint8 RGB."
+     },
+     {
+      "name": "class_counts",
+      "kind": "def",
+      "doc": "balanced: per_class each; match_real: same class distribution and size as the real train split."
+     },
+     {
+      "name": "generate_dataset",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "class_sample_grid",
+      "kind": "def",
+      "doc": "One row of generated samples per class (same seeds in every row)."
+     }
+    ],
+    "constants": [],
+    "loc": 83
+   },
+   {
+    "id": "src/skinlesion/gan/train_gan.py",
+    "label": "train_gan.py",
+    "cluster": "gan",
+    "kind": "python",
+    "doc": "Launch StyleGAN2-ADA training from a YAML config (roadmap issue 02).",
+    "symbols": [
+     {
+      "name": "stylegan_dir",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "latest_snapshot",
+      "kind": "def",
+      "doc": "Newest network-snapshot-*.pkl under a runs folder (searches all run subfolders)."
+     },
+     {
+      "name": "build_command",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "domain_loss_spec",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "train",
+      "kind": "def",
+      "doc": ""
+     }
+    ],
+    "constants": [],
+    "loc": 66
+   },
+   {
+    "id": "src/skinlesion/gan/visualize.py",
+    "label": "visualize.py",
+    "cluster": "gan",
+    "kind": "python",
+    "doc": "Image grids for SkinGAN: real vs generated per class, and training progression strips.",
+    "symbols": [
+     {
+      "name": "make_grid",
+      "kind": "def",
+      "doc": "Stack RGB tiles into a grid. rows = list of rows, each a list of HxWx3 uint8 images."
+     },
+     {
+      "name": "save_rgb",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "real_class_grid",
+      "kind": "def",
+      "doc": "One row per class of real images taken from a StyleGAN training archive."
+     },
+     {
+      "name": "progression_strip",
+      "kind": "def",
+      "doc": "Crop the same top-left tiles from every fakes*.png snapshot grid StyleGAN wrote"
+     }
+    ],
+    "constants": [],
+    "loc": 72
+   },
+   {
     "id": "src/skinlesion/models/cnn.py",
     "label": "cnn.py",
     "cluster": "models",
@@ -574,6 +937,50 @@ window.GRAPHS = {
     ],
     "constants": [],
     "loc": 73
+   },
+   {
+    "id": "src/skinlesion/models/densenet.py",
+    "label": "densenet.py",
+    "cluster": "models",
+    "kind": "python",
+    "doc": "ImageNet DenseNet-121 classifier (roadmap issue 09).",
+    "symbols": [
+     {
+      "name": "build_densenet",
+      "kind": "def",
+      "doc": "DenseNet-121 with a fresh head: 1 output for binary tasks, num_classes otherwise."
+     },
+     {
+      "name": "normalize_imagenet",
+      "kind": "def",
+      "doc": "x: (N,3,H,W) in [0,1] → ImageNet-normalised."
+     },
+     {
+      "name": "probabilities",
+      "kind": "def",
+      "doc": "(N,1) logits → (N,2) probabilities; (N,K) → softmax."
+     },
+     {
+      "name": "save_classifier",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "load_classifier",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "feature_extractor",
+      "kind": "def",
+      "doc": "DenseNet-121 trunk → 1024-d pooled features (used by the memorisation audit)."
+     }
+    ],
+    "constants": [
+     "IMAGENET_MEAN",
+     "IMAGENET_STD"
+    ],
+    "loc": 46
    },
    {
     "id": "src/skinlesion/models/ml_models.py",
@@ -635,6 +1042,52 @@ window.GRAPHS = {
     "loc": 114
    },
    {
+    "id": "src/skinlesion/training/domain_classifier.py",
+    "label": "domain_classifier.py",
+    "cluster": "training",
+    "kind": "python",
+    "doc": "Train the ImageNet DenseNet-121 classifier (roadmap issue 09).",
+    "symbols": [
+     {
+      "name": "PreloadedImages",
+      "kind": "class",
+      "doc": "Images centre-cropped and resized once (same crop as the GAN export), kept in RAM as uint8."
+     },
+     {
+      "name": "pick_device",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "cap_class",
+      "kind": "def",
+      "doc": "Keep at most cap rows of one diagnosis (nv is ~67 % of HAM10000)."
+     },
+     {
+      "name": "loss_fn",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "predict_proba",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "fit_classifier",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "train_domain_classifier",
+      "kind": "def",
+      "doc": "Real train split → domain_classifier.pt, chosen on val AUC, scored on the real test split."
+     }
+    ],
+    "constants": [],
+    "loc": 142
+   },
+   {
     "id": "src/skinlesion/training/ml_trainer.py",
     "label": "ml_trainer.py",
     "cluster": "training",
@@ -666,6 +1119,27 @@ window.GRAPHS = {
      "SETTINGS"
     ],
     "loc": 75
+   },
+   {
+    "id": "src/skinlesion/training/synthetic_learning.py",
+    "label": "synthetic_learning.py",
+    "cluster": "training",
+    "kind": "python",
+    "doc": "Synthetic-learning experiment (roadmap issue 12) — the headline SkinGAN result.",
+    "symbols": [
+     {
+      "name": "source_frame",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "run_synthetic_learning",
+      "kind": "def",
+      "doc": ""
+     }
+    ],
+    "constants": [],
+    "loc": 42
    },
    {
     "id": "src/skinlesion/utils/config.py",
@@ -754,19 +1228,30 @@ window.GRAPHS = {
      }
     ],
     "constants": [
-     "ROOT"
+     "ROOT",
+     "SKINGAN_CONFIG"
     ],
-    "loc": 20
+    "loc": 21
+   },
+   {
+    "id": "scripts/audit_memorization.py",
+    "label": "audit_memorization.py",
+    "cluster": "scripts",
+    "kind": "python",
+    "doc": "Memorisation audit of a synthetic dataset against the real train/test splits (issue 15).",
+    "symbols": [],
+    "constants": [],
+    "loc": 31
    },
    {
     "id": "scripts/compare_with_paper.py",
     "label": "compare_with_paper.py",
     "cluster": "scripts",
     "kind": "python",
-    "doc": "Rebuild outputs/report.md (paper tables vs our results) from saved results.json files.",
+    "doc": "Rebuild outputs/report.md (paper tables vs our results) from saved results.json files, and outputs/report-skingan.md if any SkinGAN results exist.",
     "symbols": [],
     "constants": [],
-    "loc": 7
+    "loc": 11
    },
    {
     "id": "scripts/download_data.py",
@@ -777,6 +1262,26 @@ window.GRAPHS = {
     "symbols": [],
     "constants": [],
     "loc": 9
+   },
+   {
+    "id": "scripts/export_gan_dataset.py",
+    "label": "export_gan_dataset.py",
+    "cluster": "scripts",
+    "kind": "python",
+    "doc": "Step 1 of SkinGAN — lesion-level split + StyleGAN training archive (issues 03, 04).",
+    "symbols": [],
+    "constants": [],
+    "loc": 21
+   },
+   {
+    "id": "scripts/generate_synthetic.py",
+    "label": "generate_synthetic.py",
+    "cluster": "scripts",
+    "kind": "python",
+    "doc": "Generate a synthetic dataset (class folders + manifest.csv) from a GAN snapshot (issue 08).",
+    "symbols": [],
+    "constants": [],
+    "loc": 31
    },
    {
     "id": "scripts/prepare_data.py",
@@ -819,6 +1324,36 @@ window.GRAPHS = {
     "loc": 14
    },
    {
+    "id": "scripts/run_synthetic_learning.py",
+    "label": "run_synthetic_learning.py",
+    "cluster": "scripts",
+    "kind": "python",
+    "doc": "Synthetic learning: train on real / GAN / SkinGAN images, test on real (issue 12). GPU recommended.",
+    "symbols": [],
+    "constants": [],
+    "loc": 11
+   },
+   {
+    "id": "scripts/train_domain_classifier.py",
+    "label": "train_domain_classifier.py",
+    "cluster": "scripts",
+    "kind": "python",
+    "doc": "Train the DenseNet-121 domain classifier on real HAM10000 (issue 09). GPU recommended.",
+    "symbols": [],
+    "constants": [],
+    "loc": 9
+   },
+   {
+    "id": "scripts/train_gan.py",
+    "label": "train_gan.py",
+    "cluster": "scripts",
+    "kind": "python",
+    "doc": "Train the baseline GAN or SkinGAN with StyleGAN2-ADA (issues 02, 06, 11). Needs a CUDA GPU.",
+    "symbols": [],
+    "constants": [],
+    "loc": 15
+   },
+   {
     "id": "tests/conftest.py",
     "label": "conftest.py",
     "cluster": "tests",
@@ -852,6 +1387,107 @@ window.GRAPHS = {
     ],
     "constants": [],
     "loc": 24
+   },
+   {
+    "id": "tests/test_skingan.py",
+    "label": "test_skingan.py",
+    "cluster": "tests",
+    "kind": "python",
+    "doc": "SkinGAN blocks on CPU with tiny dummy networks — no GPU, no StyleGAN clone, no downloads.",
+    "symbols": [
+     {
+      "name": "skingan_cfg",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "test_configs_inherit",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "test_lesion_level_split_no_leakage",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "test_label_sets",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "test_center_crop_resize",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "test_export_stylegan_archive",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "test_domain_loss_gradients_reach_generator_only",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "test_domain_loss_binary_class_map",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "test_build_command_and_spec",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "test_stylegan_patch_text",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "DummyG",
+      "kind": "class",
+      "doc": ""
+     },
+     {
+      "name": "test_generate_dataset_manifest",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "test_probabilistic_metrics_and_ci",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "test_memorization_detects_copies",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "test_dp_step_clips_then_noises",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "test_make_grid_shape",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "test_classifier_training_and_synthetic_learning",
+      "kind": "def",
+      "doc": "Domain classifier → generated set → synthetic-learning comparison, end to end on tiny data."
+     },
+     {
+      "name": "test_densenet_shapes",
+      "kind": "def",
+      "doc": ""
+     }
+    ],
+    "constants": [],
+    "loc": 169
    },
    {
     "id": "tests/test_units.py",
@@ -941,6 +1577,94 @@ window.GRAPHS = {
     "loc": 71
    },
    {
+    "id": "configs/skingan/baseline.yaml",
+    "label": "baseline.yaml",
+    "cluster": "configs",
+    "kind": "yaml",
+    "doc": "SkinGAN — baseline conditional StyleGAN2-ADA on HAM10000 (roadmap issue 06) Inherits paths / classes from paper.yaml. skingan.yaml differs only by gan.domain_loss.enabled. Override anything with --set key=value.",
+    "symbols": [
+     {
+      "name": "paths",
+      "kind": "section",
+      "doc": ""
+     },
+     {
+      "name": "split",
+      "kind": "section",
+      "doc": ""
+     },
+     {
+      "name": "labels",
+      "kind": "section",
+      "doc": ""
+     },
+     {
+      "name": "gan_data",
+      "kind": "section",
+      "doc": ""
+     },
+     {
+      "name": "gan",
+      "kind": "section",
+      "doc": ""
+     },
+     {
+      "name": "domain_classifier",
+      "kind": "section",
+      "doc": ""
+     },
+     {
+      "name": "generate",
+      "kind": "section",
+      "doc": ""
+     }
+    ],
+    "constants": [],
+    "loc": 61
+   },
+   {
+    "id": "configs/skingan/skingan.yaml",
+    "label": "skingan.yaml",
+    "cluster": "configs",
+    "kind": "yaml",
+    "doc": "SkinGAN = baseline + domain-relevant generator loss (roadmap issues 10, 11). λ sweep: python scripts/train_gan.py --config configs/skingan/skingan.yaml --set gan.domain_loss.weight=0.5",
+    "symbols": [
+     {
+      "name": "paths",
+      "kind": "section",
+      "doc": ""
+     },
+     {
+      "name": "gan",
+      "kind": "section",
+      "doc": ""
+     }
+    ],
+    "constants": [],
+    "loc": 8
+   },
+   {
+    "id": "configs/skingan/synthetic_learning.yaml",
+    "label": "synthetic_learning.yaml",
+    "cluster": "configs",
+    "kind": "yaml",
+    "doc": "Synthetic learning (roadmap issue 12): train the same classifier on each source, always evaluate on the same REAL test split.",
+    "symbols": [
+     {
+      "name": "synthetic_learning",
+      "kind": "section",
+      "doc": ""
+     },
+     {
+      "name": "paths",
+      "kind": "section",
+      "doc": ""
+     }
+    ],
+    "constants": [],
+    "loc": 13
+   },
+   {
     "id": "configs/variations/no_leakage.yaml",
     "label": "no_leakage.yaml",
     "cluster": "configs",
@@ -964,6 +1688,24 @@ window.GRAPHS = {
   ],
   "edges": [
    {
+    "source": "configs/skingan/baseline.yaml",
+    "target": "configs/paper.yaml",
+    "kind": "inherits",
+    "label": ""
+   },
+   {
+    "source": "configs/skingan/skingan.yaml",
+    "target": "configs/skingan/baseline.yaml",
+    "kind": "inherits",
+    "label": ""
+   },
+   {
+    "source": "configs/skingan/synthetic_learning.yaml",
+    "target": "configs/skingan/baseline.yaml",
+    "kind": "inherits",
+    "label": ""
+   },
+   {
     "source": "configs/variations/no_leakage.yaml",
     "target": "configs/paper.yaml",
     "kind": "inherits",
@@ -977,6 +1719,12 @@ window.GRAPHS = {
    },
    {
     "source": "scripts/_bootstrap.py",
+    "target": "configs/skingan/baseline.yaml",
+    "kind": "config",
+    "label": "reads config"
+   },
+   {
+    "source": "scripts/_bootstrap.py",
     "target": "src/skinlesion/utils/config.py",
     "kind": "import",
     "label": ""
@@ -984,6 +1732,48 @@ window.GRAPHS = {
    {
     "source": "scripts/_bootstrap.py",
     "target": "src/skinlesion/utils/seed.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/audit_memorization.py",
+    "target": "scripts/_bootstrap.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/audit_memorization.py",
+    "target": "src/skinlesion/data/dataset.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/audit_memorization.py",
+    "target": "src/skinlesion/data/splits.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/audit_memorization.py",
+    "target": "src/skinlesion/evaluation/memorization.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/audit_memorization.py",
+    "target": "src/skinlesion/gan/dataset_export.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/audit_memorization.py",
+    "target": "src/skinlesion/gan/visualize.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/audit_memorization.py",
+    "target": "src/skinlesion/utils/io.py",
     "kind": "import",
     "label": ""
    },
@@ -1008,6 +1798,72 @@ window.GRAPHS = {
    {
     "source": "scripts/download_data.py",
     "target": "src/skinlesion/data/download.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/export_gan_dataset.py",
+    "target": "scripts/_bootstrap.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/export_gan_dataset.py",
+    "target": "src/skinlesion/data/metadata.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/export_gan_dataset.py",
+    "target": "src/skinlesion/gan/dataset_export.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/export_gan_dataset.py",
+    "target": "src/skinlesion/gan/visualize.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/export_gan_dataset.py",
+    "target": "src/skinlesion/utils/io.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/generate_synthetic.py",
+    "target": "scripts/_bootstrap.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/generate_synthetic.py",
+    "target": "src/skinlesion/data/splits.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/generate_synthetic.py",
+    "target": "src/skinlesion/gan/generate.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/generate_synthetic.py",
+    "target": "src/skinlesion/gan/train_gan.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/generate_synthetic.py",
+    "target": "src/skinlesion/gan/visualize.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/generate_synthetic.py",
+    "target": "src/skinlesion/utils/io.py",
     "kind": "import",
     "label": ""
    },
@@ -1104,6 +1960,54 @@ window.GRAPHS = {
    {
     "source": "scripts/run_ml.py",
     "target": "src/skinlesion/training/ml_trainer.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/run_synthetic_learning.py",
+    "target": "configs/skingan/synthetic_learning.yaml",
+    "kind": "config",
+    "label": "reads config"
+   },
+   {
+    "source": "scripts/run_synthetic_learning.py",
+    "target": "scripts/_bootstrap.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/run_synthetic_learning.py",
+    "target": "src/skinlesion/evaluation/report.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/run_synthetic_learning.py",
+    "target": "src/skinlesion/training/synthetic_learning.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/train_domain_classifier.py",
+    "target": "scripts/_bootstrap.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/train_domain_classifier.py",
+    "target": "src/skinlesion/training/domain_classifier.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/train_gan.py",
+    "target": "scripts/_bootstrap.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/train_gan.py",
+    "target": "src/skinlesion/gan/train_gan.py",
     "kind": "import",
     "label": ""
    },
@@ -1150,6 +2054,24 @@ window.GRAPHS = {
     "label": ""
    },
    {
+    "source": "src/skinlesion/data/splits.py",
+    "target": "src/skinlesion/data/metadata.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/data/splits.py",
+    "target": "src/skinlesion/utils/io.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/evaluation/memorization.py",
+    "target": "src/skinlesion/models/densenet.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
     "source": "src/skinlesion/evaluation/plots.py",
     "target": "src/skinlesion/utils/io.py",
     "kind": "import",
@@ -1169,6 +2091,12 @@ window.GRAPHS = {
    },
    {
     "source": "src/skinlesion/evaluation/report.py",
+    "target": "src/skinlesion/gan/gan_metrics.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/evaluation/report.py",
     "target": "src/skinlesion/utils/io.py",
     "kind": "import",
     "label": ""
@@ -1181,6 +2109,78 @@ window.GRAPHS = {
    },
    {
     "source": "src/skinlesion/features/extractor.py",
+    "target": "src/skinlesion/utils/io.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/gan/dataset_export.py",
+    "target": "src/skinlesion/data/splits.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/gan/dataset_export.py",
+    "target": "src/skinlesion/utils/io.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/gan/domain_loss.py",
+    "target": "src/skinlesion/models/densenet.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/gan/gan_metrics.py",
+    "target": "src/skinlesion/gan/train_gan.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/gan/gan_metrics.py",
+    "target": "src/skinlesion/utils/io.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/gan/generate.py",
+    "target": "src/skinlesion/gan/visualize.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/gan/generate.py",
+    "target": "src/skinlesion/utils/io.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/gan/train_gan.py",
+    "target": "src/skinlesion/data/splits.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/gan/train_gan.py",
+    "target": "src/skinlesion/gan/domain_loss.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/gan/train_gan.py",
+    "target": "src/skinlesion/utils/io.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/gan/visualize.py",
+    "target": "src/skinlesion/gan/dataset_export.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/gan/visualize.py",
     "target": "src/skinlesion/utils/io.py",
     "kind": "import",
     "label": ""
@@ -1228,6 +2228,48 @@ window.GRAPHS = {
     "label": ""
    },
    {
+    "source": "src/skinlesion/training/domain_classifier.py",
+    "target": "src/skinlesion/data/dataset.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/training/domain_classifier.py",
+    "target": "src/skinlesion/data/splits.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/training/domain_classifier.py",
+    "target": "src/skinlesion/evaluation/metrics.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/training/domain_classifier.py",
+    "target": "src/skinlesion/evaluation/plots.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/training/domain_classifier.py",
+    "target": "src/skinlesion/gan/dataset_export.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/training/domain_classifier.py",
+    "target": "src/skinlesion/models/densenet.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/training/domain_classifier.py",
+    "target": "src/skinlesion/utils/io.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
     "source": "src/skinlesion/training/ml_trainer.py",
     "target": "src/skinlesion/data/dataset.py",
     "kind": "import",
@@ -1265,6 +2307,30 @@ window.GRAPHS = {
    },
    {
     "source": "src/skinlesion/training/ml_trainer.py",
+    "target": "src/skinlesion/utils/io.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/training/synthetic_learning.py",
+    "target": "src/skinlesion/data/dataset.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/training/synthetic_learning.py",
+    "target": "src/skinlesion/data/splits.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/training/synthetic_learning.py",
+    "target": "src/skinlesion/training/domain_classifier.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/training/synthetic_learning.py",
     "target": "src/skinlesion/utils/io.py",
     "kind": "import",
     "label": ""
@@ -1320,6 +2386,108 @@ window.GRAPHS = {
    {
     "source": "tests/test_pipeline.py",
     "target": "src/skinlesion/utils/io.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "tests/test_skingan.py",
+    "target": "configs/skingan/baseline.yaml",
+    "kind": "config",
+    "label": "reads config"
+   },
+   {
+    "source": "tests/test_skingan.py",
+    "target": "configs/skingan/skingan.yaml",
+    "kind": "config",
+    "label": "reads config"
+   },
+   {
+    "source": "tests/test_skingan.py",
+    "target": "src/skinlesion/data/dataset.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "tests/test_skingan.py",
+    "target": "src/skinlesion/data/splits.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "tests/test_skingan.py",
+    "target": "src/skinlesion/evaluation/memorization.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "tests/test_skingan.py",
+    "target": "src/skinlesion/evaluation/metrics.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "tests/test_skingan.py",
+    "target": "src/skinlesion/gan/dataset_export.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "tests/test_skingan.py",
+    "target": "src/skinlesion/gan/domain_loss.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "tests/test_skingan.py",
+    "target": "src/skinlesion/gan/dp_training.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "tests/test_skingan.py",
+    "target": "src/skinlesion/gan/generate.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "tests/test_skingan.py",
+    "target": "src/skinlesion/gan/train_gan.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "tests/test_skingan.py",
+    "target": "src/skinlesion/gan/visualize.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "tests/test_skingan.py",
+    "target": "src/skinlesion/models/densenet.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "tests/test_skingan.py",
+    "target": "src/skinlesion/training/domain_classifier.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "tests/test_skingan.py",
+    "target": "src/skinlesion/training/synthetic_learning.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "tests/test_skingan.py",
+    "target": "src/skinlesion/utils/config.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "tests/test_skingan.py",
+    "target": "tests/conftest.py",
     "kind": "import",
     "label": ""
    },
@@ -2627,21 +3795,26 @@ window.GRAPHS = {
  "skingan": {
   "id": "skingan",
   "title": "SkinGAN (planned)",
-  "subtitle": "Planned SkinGAN code: reuse the reproduction, add StyleGAN2-ADA + domain loss + synthetic learning",
+  "subtitle": "SkinGAN code: the reproduction + StyleGAN2-ADA + domain loss + synthetic learning",
   "pill_w": 182,
   "statuses": {
    "exists": {
-    "label": "Already in the repo, reused as-is",
+    "label": "Reproduction file, reused as-is",
     "badge": "",
     "style": "solid"
    },
+   "built": {
+    "label": "Written for SkinGAN",
+    "badge": "new",
+    "style": "accent"
+   },
    "extend": {
-    "label": "Exists; a roadmap issue extends it",
+    "label": "Reproduction file extended for SkinGAN",
     "badge": "ext",
     "style": "accent"
    },
    "planned": {
-    "label": "Planned: not written yet",
+    "label": "Not in the repo yet (StyleGAN: cloned by setup_stylegan.py)",
     "badge": "",
     "style": "dashed"
    },
@@ -2676,6 +3849,7 @@ window.GRAPHS = {
      "scripts/train_domain_classifier.py",
      "scripts/generate_synthetic.py",
      "scripts/run_synthetic_learning.py",
+     "scripts/audit_memorization.py",
      "scripts/compare_with_paper.py",
      "scripts/run_all.py"
     ],
@@ -2686,7 +3860,8 @@ window.GRAPHS = {
      8,
      9,
      12,
-     14
+     14,
+     15
     ]
    },
    {
@@ -2787,7 +3962,8 @@ window.GRAPHS = {
      "src/skinlesion/gan/train_gan.py",
      "src/skinlesion/gan/domain_loss.py",
      "src/skinlesion/gan/generate.py",
-     "src/skinlesion/gan/gan_metrics.py"
+     "src/skinlesion/gan/gan_metrics.py",
+     "src/skinlesion/gan/visualize.py"
     ],
     "loc": 0,
     "issues": [
@@ -2813,6 +3989,8 @@ window.GRAPHS = {
     "y": 470,
     "cols": 2,
     "files": [
+     "third_party/setup_stylegan.py",
+     "third_party/stylegan2-ada-pytorch/legacy.py",
      "third_party/stylegan2-ada-pytorch/train.py",
      "third_party/stylegan2-ada-pytorch/training/training_loop.py",
      "third_party/stylegan2-ada-pytorch/training/loss.py",
@@ -2930,6 +4108,30 @@ window.GRAPHS = {
     ]
    },
    {
+    "id": "gan_test",
+    "name": "GAN test (Colab)",
+    "description": "Short Colab smoke test of the baseline GAN (~100 kimg) that produces the first real-vs-generated pictures.",
+    "functionalities": [
+     "Colab notebook: GPU check → Drive → clone repo → StyleGAN setup → data → train → pictures",
+     "test_config.yaml: baseline with a 100 kimg budget, snapshots every 20 kimg",
+     "make_real_grid.py: laptop preview of the real 256² training images per class",
+     "show_results.py: progression strip, real | generated grid, per-class grid"
+    ],
+    "folder": "gan_test/",
+    "color": "teal",
+    "x": 160,
+    "y": 900,
+    "cols": 1,
+    "files": [
+     "gan_test/SkinGAN_Colab_Test.ipynb",
+     "gan_test/test_config.yaml",
+     "gan_test/make_real_grid.py",
+     "gan_test/show_results.py"
+    ],
+    "loc": 0,
+    "issues": []
+   },
+   {
     "id": "artifacts",
     "name": "Data & artifacts",
     "description": "Files that connect the stages; each is produced by one module and consumed by others.",
@@ -2986,10 +4188,10 @@ window.GRAPHS = {
     "label": "export_gan_dataset.py",
     "cluster": "scripts",
     "kind": "python",
-    "status": "planned",
+    "status": "built",
     "issue": 4,
     "issue_url": "",
-    "url": "",
+    "url": "../scripts/export_gan_dataset.py",
     "doc": "Export the train split as a StyleGAN dataset (binary or 7-class labels).",
     "constants": [],
     "loc": 0,
@@ -3000,10 +4202,10 @@ window.GRAPHS = {
     "label": "train_gan.py",
     "cluster": "scripts",
     "kind": "python",
-    "status": "planned",
+    "status": "built",
     "issue": 2,
     "issue_url": "",
-    "url": "",
+    "url": "../scripts/train_gan.py",
     "doc": "Train baseline or SkinGAN from a YAML config.",
     "constants": [],
     "loc": 0,
@@ -3014,10 +4216,10 @@ window.GRAPHS = {
     "label": "train_domain_classifier.py",
     "cluster": "scripts",
     "kind": "python",
-    "status": "planned",
+    "status": "built",
     "issue": 9,
     "issue_url": "",
-    "url": "",
+    "url": "../scripts/train_domain_classifier.py",
     "doc": "Train and export the DenseNet domain classifier.",
     "constants": [],
     "loc": 0,
@@ -3028,10 +4230,10 @@ window.GRAPHS = {
     "label": "generate_synthetic.py",
     "cluster": "scripts",
     "kind": "python",
-    "status": "planned",
+    "status": "built",
     "issue": 8,
     "issue_url": "",
-    "url": "",
+    "url": "../scripts/generate_synthetic.py",
     "doc": "Generate a synthetic dataset from a .pkl (policy: balanced / match-real).",
     "constants": [],
     "loc": 0,
@@ -3042,11 +4244,25 @@ window.GRAPHS = {
     "label": "run_synthetic_learning.py",
     "cluster": "scripts",
     "kind": "python",
-    "status": "planned",
+    "status": "built",
     "issue": 12,
     "issue_url": "",
-    "url": "",
+    "url": "../scripts/run_synthetic_learning.py",
     "doc": "Run the synthetic-learning comparison.",
+    "constants": [],
+    "loc": 0,
+    "symbols": []
+   },
+   {
+    "id": "scripts/audit_memorization.py",
+    "label": "audit_memorization.py",
+    "cluster": "scripts",
+    "kind": "python",
+    "status": "built",
+    "issue": 15,
+    "issue_url": "",
+    "url": "../scripts/audit_memorization.py",
+    "doc": "Nearest-neighbour memorisation audit of a synthetic set.",
     "constants": [],
     "loc": 0,
     "symbols": []
@@ -3098,10 +4314,10 @@ window.GRAPHS = {
     "label": "baseline.yaml",
     "cluster": "configs",
     "kind": "python",
-    "status": "planned",
+    "status": "built",
     "issue": 6,
     "issue_url": "",
-    "url": "",
+    "url": "../configs/skingan/baseline.yaml",
     "doc": "Baseline conditional StyleGAN2-ADA settings.",
     "constants": [],
     "loc": 0,
@@ -3112,10 +4328,10 @@ window.GRAPHS = {
     "label": "skingan.yaml",
     "cluster": "configs",
     "kind": "python",
-    "status": "planned",
+    "status": "built",
     "issue": 11,
     "issue_url": "",
-    "url": "",
+    "url": "../configs/skingan/skingan.yaml",
     "doc": "Inherits baseline; enables the domain loss.",
     "constants": [],
     "loc": 0,
@@ -3126,10 +4342,10 @@ window.GRAPHS = {
     "label": "synthetic_learning.yaml",
     "cluster": "configs",
     "kind": "python",
-    "status": "planned",
+    "status": "built",
     "issue": 12,
     "issue_url": "",
-    "url": "",
+    "url": "../configs/skingan/synthetic_learning.yaml",
     "doc": "Experiment grid for synthetic learning.",
     "constants": [],
     "loc": 0,
@@ -3252,10 +4468,10 @@ window.GRAPHS = {
     "label": "dataset_export.py",
     "cluster": "gan",
     "kind": "python",
-    "status": "planned",
+    "status": "built",
     "issue": 4,
     "issue_url": "",
-    "url": "",
+    "url": "../src/skinlesion/gan/dataset_export.py",
     "doc": "450² centre crop → 256², dataset.json, train split only.",
     "constants": [],
     "loc": 0,
@@ -3266,10 +4482,10 @@ window.GRAPHS = {
     "label": "train_gan.py",
     "cluster": "gan",
     "kind": "python",
-    "status": "planned",
+    "status": "built",
     "issue": 2,
     "issue_url": "",
-    "url": "",
+    "url": "../src/skinlesion/gan/train_gan.py",
     "doc": "YAML → StyleGAN train.py launcher (cond, kimg, aug, resume, domain loss).",
     "constants": [],
     "loc": 0,
@@ -3280,10 +4496,10 @@ window.GRAPHS = {
     "label": "domain_loss.py",
     "cluster": "gan",
     "kind": "python",
-    "status": "planned",
+    "status": "built",
     "issue": 10,
     "issue_url": "",
-    "url": "",
+    "url": "../src/skinlesion/gan/domain_loss.py",
     "doc": "DomainLoss module: rescale [-1,1]→[0,1], resize 224, ImageNet norm, frozen classifier, BCE or CE × λ.",
     "constants": [],
     "loc": 0,
@@ -3294,10 +4510,10 @@ window.GRAPHS = {
     "label": "generate.py",
     "cluster": "gan",
     "kind": "python",
-    "status": "planned",
+    "status": "built",
     "issue": 8,
     "issue_url": "",
-    "url": "",
+    "url": "../src/skinlesion/gan/generate.py",
     "doc": "Generate N images per class into data/synthetic/<run>/ + manifest.",
     "constants": [],
     "loc": 0,
@@ -3308,11 +4524,53 @@ window.GRAPHS = {
     "label": "gan_metrics.py",
     "cluster": "gan",
     "kind": "python",
-    "status": "planned",
+    "status": "built",
     "issue": 7,
     "issue_url": "",
+    "url": "../src/skinlesion/gan/gan_metrics.py",
+    "doc": "FID / KID / precision-recall wrapper around StyleGAN's calc_metrics.",
+    "constants": [],
+    "loc": 0,
+    "symbols": []
+   },
+   {
+    "id": "src/skinlesion/gan/visualize.py",
+    "label": "visualize.py",
+    "cluster": "gan",
+    "kind": "python",
+    "status": "built",
+    "issue": 7,
+    "issue_url": "",
+    "url": "../src/skinlesion/gan/visualize.py",
+    "doc": "Image grids: real vs generated per class, training progression strips.",
+    "constants": [],
+    "loc": 0,
+    "symbols": []
+   },
+   {
+    "id": "third_party/setup_stylegan.py",
+    "label": "setup_stylegan.py",
+    "cluster": "third_party",
+    "kind": "python",
+    "status": "built",
+    "issue": 2,
+    "issue_url": "",
+    "url": "../third_party/setup_stylegan.py",
+    "doc": "Clones NVlabs/stylegan2-ada-pytorch and applies the two SkinGAN patches (domain-loss hook, conditional resume).",
+    "constants": [],
+    "loc": 0,
+    "symbols": []
+   },
+   {
+    "id": "third_party/stylegan2-ada-pytorch/legacy.py",
+    "label": "legacy.py",
+    "cluster": "third_party",
+    "kind": "python",
+    "status": "planned",
+    "issue": 2,
+    "issue_url": "",
     "url": "",
-    "doc": "FID / KID / precision-recall wrapper + per-class grids.",
+    "doc": "Loads network pickles (used by our generator wrapper).",
     "constants": [],
     "loc": 0,
     "symbols": []
@@ -3420,10 +4678,10 @@ window.GRAPHS = {
     "label": "densenet.py",
     "cluster": "models",
     "kind": "python",
-    "status": "planned",
+    "status": "built",
     "issue": 9,
     "issue_url": "",
-    "url": "",
+    "url": "../src/skinlesion/models/densenet.py",
     "doc": "ImageNet DenseNet-121 with binary or 7-class head.",
     "constants": [],
     "loc": 0,
@@ -3462,10 +4720,10 @@ window.GRAPHS = {
     "label": "domain_classifier.py",
     "cluster": "training",
     "kind": "python",
-    "status": "planned",
+    "status": "built",
     "issue": 9,
     "issue_url": "",
-    "url": "",
+    "url": "../src/skinlesion/training/domain_classifier.py",
     "doc": "Train DenseNet on real train split; select by validation AUC; export .pt.",
     "constants": [],
     "loc": 0,
@@ -3476,10 +4734,10 @@ window.GRAPHS = {
     "label": "synthetic_learning.py",
     "cluster": "training",
     "kind": "python",
-    "status": "planned",
+    "status": "built",
     "issue": 12,
     "issue_url": "",
-    "url": "",
+    "url": "../src/skinlesion/training/synthetic_learning.py",
     "doc": "Real / GAN / SkinGAN / mixed → same real test set; seeds + CIs.",
     "constants": [],
     "loc": 0,
@@ -3574,10 +4832,10 @@ window.GRAPHS = {
     "label": "memorization.py",
     "cluster": "privacy",
     "kind": "python",
-    "status": "planned",
+    "status": "built",
     "issue": 15,
     "issue_url": "",
-    "url": "",
+    "url": "../src/skinlesion/evaluation/memorization.py",
     "doc": "Nearest-neighbour memorisation audit.",
     "constants": [],
     "loc": 0,
@@ -3588,11 +4846,67 @@ window.GRAPHS = {
     "label": "dp_training.py",
     "cluster": "privacy",
     "kind": "python",
-    "status": "planned",
+    "status": "built",
     "issue": 16,
     "issue_url": "",
-    "url": "",
+    "url": "../src/skinlesion/gan/dp_training.py",
     "doc": "Per-sample clipping + noise for D; Opacus ε accounting.",
+    "constants": [],
+    "loc": 0,
+    "symbols": []
+   },
+   {
+    "id": "gan_test/SkinGAN_Colab_Test.ipynb",
+    "label": "SkinGAN_Colab_Test.ipynb",
+    "cluster": "gan_test",
+    "kind": "notebook",
+    "status": "built",
+    "issue": null,
+    "issue_url": "",
+    "url": "../gan_test/SkinGAN_Colab_Test.ipynb",
+    "doc": "Colab smoke test: setup, HAM10000 → 256² archive, ~100 kimg baseline training, pictures.",
+    "constants": [],
+    "loc": 0,
+    "symbols": []
+   },
+   {
+    "id": "gan_test/test_config.yaml",
+    "label": "test_config.yaml",
+    "cluster": "gan_test",
+    "kind": "yaml",
+    "status": "built",
+    "issue": null,
+    "issue_url": "",
+    "url": "../gan_test/test_config.yaml",
+    "doc": "Baseline config with kimg=100, snap=5.",
+    "constants": [],
+    "loc": 0,
+    "symbols": []
+   },
+   {
+    "id": "gan_test/make_real_grid.py",
+    "label": "make_real_grid.py",
+    "cluster": "gan_test",
+    "kind": "python",
+    "status": "built",
+    "issue": null,
+    "issue_url": "",
+    "url": "../gan_test/make_real_grid.py",
+    "doc": "Laptop preview of the real training images per class.",
+    "constants": [],
+    "loc": 0,
+    "symbols": []
+   },
+   {
+    "id": "gan_test/show_results.py",
+    "label": "show_results.py",
+    "cluster": "gan_test",
+    "kind": "python",
+    "status": "built",
+    "issue": null,
+    "issue_url": "",
+    "url": "../gan_test/show_results.py",
+    "doc": "progression.png, real_vs_generated.png, class_grid.png from a run.",
     "constants": [],
     "loc": 0,
     "symbols": []
@@ -3779,8 +5093,116 @@ window.GRAPHS = {
    },
    {
     "source": "configs/skingan/synthetic_learning.yaml",
+    "target": "configs/skingan/baseline.yaml",
+    "kind": "inherits",
+    "label": ""
+   },
+   {
+    "source": "configs/skingan/baseline.yaml",
     "target": "configs/paper.yaml",
     "kind": "inherits",
+    "label": ""
+   },
+   {
+    "source": "gan_test/test_config.yaml",
+    "target": "configs/skingan/baseline.yaml",
+    "kind": "inherits",
+    "label": ""
+   },
+   {
+    "source": "gan_test/SkinGAN_Colab_Test.ipynb",
+    "target": "third_party/setup_stylegan.py",
+    "kind": "calls",
+    "label": ""
+   },
+   {
+    "source": "gan_test/SkinGAN_Colab_Test.ipynb",
+    "target": "scripts/export_gan_dataset.py",
+    "kind": "calls",
+    "label": ""
+   },
+   {
+    "source": "gan_test/SkinGAN_Colab_Test.ipynb",
+    "target": "scripts/train_gan.py",
+    "kind": "calls",
+    "label": ""
+   },
+   {
+    "source": "gan_test/SkinGAN_Colab_Test.ipynb",
+    "target": "gan_test/show_results.py",
+    "kind": "calls",
+    "label": ""
+   },
+   {
+    "source": "gan_test/SkinGAN_Colab_Test.ipynb",
+    "target": "gan_test/test_config.yaml",
+    "kind": "config",
+    "label": "reads config"
+   },
+   {
+    "source": "gan_test/show_results.py",
+    "target": "src/skinlesion/gan/generate.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "gan_test/show_results.py",
+    "target": "src/skinlesion/gan/visualize.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "gan_test/make_real_grid.py",
+    "target": "src/skinlesion/data/splits.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "gan_test/make_real_grid.py",
+    "target": "src/skinlesion/gan/visualize.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "third_party/setup_stylegan.py",
+    "target": "third_party/stylegan2-ada-pytorch/training/loss.py",
+    "kind": "writes",
+    "label": "patches"
+   },
+   {
+    "source": "scripts/audit_memorization.py",
+    "target": "src/skinlesion/evaluation/memorization.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "scripts/export_gan_dataset.py",
+    "target": "src/skinlesion/gan/visualize.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/gan/train_gan.py",
+    "target": "src/skinlesion/gan/domain_loss.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/evaluation/report.py",
+    "target": "src/skinlesion/gan/gan_metrics.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/training/domain_classifier.py",
+    "target": "src/skinlesion/gan/dataset_export.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "src/skinlesion/training/domain_classifier.py",
+    "target": "src/skinlesion/evaluation/plots.py",
+    "kind": "import",
     "label": ""
    },
    {
@@ -3881,8 +5303,8 @@ window.GRAPHS = {
    },
    {
     "source": "src/skinlesion/gan/generate.py",
-    "target": "third_party/stylegan2-ada-pytorch/generate.py",
-    "kind": "calls",
+    "target": "third_party/stylegan2-ada-pytorch/legacy.py",
+    "kind": "import",
     "label": ""
    },
    {
@@ -3995,25 +5417,13 @@ window.GRAPHS = {
    },
    {
     "source": "src/skinlesion/training/synthetic_learning.py",
-    "target": "src/skinlesion/models/densenet.py",
+    "target": "src/skinlesion/training/domain_classifier.py",
     "kind": "import",
-    "label": ""
-   },
-   {
-    "source": "src/skinlesion/training/synthetic_learning.py",
-    "target": "src/skinlesion/training/cnn_trainer.py",
-    "kind": "import",
-    "label": ""
+    "label": "reuses fit_classifier"
    },
    {
     "source": "src/skinlesion/training/synthetic_learning.py",
     "target": "src/skinlesion/data/dataset.py",
-    "kind": "import",
-    "label": ""
-   },
-   {
-    "source": "src/skinlesion/training/synthetic_learning.py",
-    "target": "src/skinlesion/evaluation/metrics.py",
     "kind": "import",
     "label": ""
    },

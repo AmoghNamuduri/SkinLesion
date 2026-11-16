@@ -145,6 +145,21 @@ CLUSTERS = {
             "build_report: outputs/report.md with paper and our numbers side by side",
         ],
     },
+    "gan": {
+        "name": "GAN module (SkinGAN)",
+        "match": ["src/skinlesion/gan/"],
+        "description": "SkinGAN code around the vendored NVIDIA StyleGAN2-ADA: dataset export, the YAML launcher, the "
+                       "domain-relevant loss, generation, metrics, image grids and the DP stretch goal.",
+        "functionalities": [
+            "Export the lesion-level train split as a 256² conditional StyleGAN archive (dataset.json labels)",
+            "Launch StyleGAN train.py from YAML; baseline vs SkinGAN differ by one switch",
+            "DomainLoss: λ · CE(frozen DenseNet(G(z,c)), c), with SpineGAN's preprocessing bugs fixed",
+            "Generate N images per class into class folders + manifest.csv",
+            "FID / KID / precision-recall via StyleGAN's calc_metrics",
+            "Real-vs-generated, per-class and training-progression image grids",
+            "Correct DP-SGD step (clip, then noise) + Opacus ε accounting",
+        ],
+    },
     "tests": {
         "name": "Tests",
         "match": ["tests/"],
@@ -306,9 +321,10 @@ def build():
 
 # colour, x, y, columns for the code-derived SkinLesion map
 SKINLESION_LAYOUT = {
-    "scripts": ("violet", 900, 120, 3), "configs": ("amber", 1480, 165, 1), "tests": ("brown", 330, 165, 1),
-    "data": ("blue", 250, 600, 2), "training": ("orange", 900, 560, 1), "evaluation": ("green", 1540, 600, 2),
-    "features": ("teal", 520, 1010, 1), "utils": ("slate", 900, 1030, 1), "models": ("magenta", 1290, 1010, 1),
+    "scripts": ("violet", 900, 120, 4), "configs": ("amber", 1560, 150, 1), "tests": ("brown", 260, 150, 1),
+    "data": ("blue", 220, 580, 2), "training": ("orange", 900, 560, 2), "evaluation": ("green", 1580, 600, 2),
+    "features": ("teal", 420, 1030, 1), "utils": ("slate", 820, 1060, 1), "models": ("magenta", 1220, 1040, 1),
+    "gan": ("red", 1230, 810, 2),
 }
 
 SPECS = Path(__file__).resolve().parent / "specs"
@@ -330,9 +346,9 @@ def load_spec(path: Path) -> dict:
     nodes = []
     for n in spec["nodes"]:
         status = n.get("status", "")
-        # a planned file that now exists in our repo is shown as done
+        # a planned file that now exists in our repo is shown as built
         if spec["id"] == "skingan" and status == "planned" and (ROOT / n["id"]).exists():
-            status = "exists"
+            status = "built" if "built" in spec.get("statuses", {}) else "exists"
         label = n.get("label") or n["id"].rstrip("/").split("/")[-1]
         url = (spec.get("repo_url", "") + n["id"]) if spec.get("repo_url") and n.get("kind") != "artifact" else ""
         if spec["id"] == "skingan" and (ROOT / n["id"]).exists():
