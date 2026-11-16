@@ -1,0 +1,9 @@
+# Extra packages for SkinGAN (on top of requirements.txt). Colab already has torch/torchvision/scipy.
+torchvision>=0.16
+scipy>=1.10           # StyleGAN2-ADA augment pipeline
+click>=8.0            # StyleGAN2-ADA CLI
+ninja>=1.11           # compiles StyleGAN's custom CUDA ops
+requests>=2.28
+tqdm>=4.60
+# optional
+# opacus>=1.4         # ε accounting for the DP stretch goal (issue 16)

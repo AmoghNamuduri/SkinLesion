@@ -1,0 +1,12 @@
+# SkinGAN = baseline + domain-relevant generator loss (roadmap issues 10, 11).
+# λ sweep: python scripts/train_gan.py --config configs/skingan/skingan.yaml --set gan.domain_loss.weight=0.5
+base: baseline.yaml
+
+paths:
+  gan_runs: outputs/gan/skingan
+  synthetic_dir: data/synthetic/skingan
+
+gan:
+  domain_loss:
+    enabled: true
+    weight: 0.1

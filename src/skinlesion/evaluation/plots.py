@@ -55,6 +55,24 @@ def plot_confusion(cm, labels, path, title="Confusion matrix") -> Path:
     return _save(fig, path)
 
 
+def plot_roc(y_true, proba, class_names, path, title="ROC") -> Path:
+    """Binary ROC, or one-vs-rest ROC per class (issue 05)."""
+    from sklearn.metrics import auc, roc_curve
+
+    y_true, proba = np.asarray(y_true), np.asarray(proba)
+    fig, ax = plt.subplots(figsize=(5.5, 5))
+    pairs = [(1, class_names[1])] if proba.shape[1] == 2 else list(enumerate(class_names))
+    for k, name in pairs:
+        if 0 < (y_true == k).sum() < len(y_true):
+            fpr, tpr, _ = roc_curve(y_true == k, proba[:, k])
+            ax.plot(fpr, tpr, label=f"{name} (AUC {auc(fpr, tpr):.3f})")
+    ax.plot([0, 1], [0, 1], ls="--", color="#999", lw=1)
+    ax.set(xlabel="false positive rate", ylabel="true positive rate", title=title)
+    ax.legend(fontsize=8)
+    ax.grid(alpha=.3)
+    return _save(fig, path)
+
+
 def plot_paper_vs_ours(names, paper_vals, our_vals, path, title, ylabel="accuracy") -> Path:
     x = np.arange(len(names))
     fig, ax = plt.subplots(figsize=(9, 4))
