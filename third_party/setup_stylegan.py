@@ -18,6 +18,8 @@ SpineGAN keeps three full copies of StyleGAN2-ADA; we keep one, cloned on demand
                         no longer makes it importable by name ("No module named 'upfirdn2d_plugin'").
 4. torch_utils/ops/upfirdn2d.py — set _inited so a failed CUDA build is not retried on every
                         call (which floods the log and stalls training).
+5. torch_utils/ops/{conv2d,grid_sample}_gradfix.py — print the "not supported on PyTorch X"
+                        fallback warning once instead of on every call.
 """
 from __future__ import annotations
 
@@ -76,6 +78,14 @@ OPS_IMPORT_NEW = f"        {MARK} module comes from cpp_extension.load() above (
 UPFIRDN_OLD = "    global _inited, _plugin\n    if not _inited:\n"
 UPFIRDN_NEW = f"    global _inited, _plugin\n    if not _inited:\n        _inited = True {MARK} try the build only once\n"
 
+# The gradfix ops warn "not supported on PyTorch X" on *every* convolution on new PyTorch
+# (thousands of lines that bury the training progress). Warn once, then turn the check off;
+# the fallback (standard PyTorch op) is used either way, so the computation is unchanged.
+CONV_WARN_OLD = "    warnings.warn(f'conv2d_gradfix not supported on PyTorch {torch.__version__}. Falling back to torch.nn.functional.conv2d().')\n"
+CONV_WARN_NEW = f"    globals()['enabled'] = False {MARK} warn once; later calls return early\n" + CONV_WARN_OLD
+GRID_WARN_OLD = "    warnings.warn(f'grid_sample_gradfix not supported on PyTorch {torch.__version__}. Falling back to torch.nn.functional.grid_sample().')\n"
+GRID_WARN_NEW = f"    globals()['enabled'] = False {MARK} warn once; later calls return early\n" + GRID_WARN_OLD
+
 # file -> list of (original text, patched text); each patch is applied independently, so new
 # patches also reach clones that were patched by an older version of this script
 PATCHES = {
@@ -84,12 +94,18 @@ PATCHES = {
     "torch_utils/custom_ops.py": [(OPS_LOAD1_OLD, OPS_LOAD1_NEW), (OPS_LOAD2_OLD, OPS_LOAD2_NEW),
                                   (OPS_IMPORT_OLD, OPS_IMPORT_NEW)],
     "torch_utils/ops/upfirdn2d.py": [(UPFIRDN_OLD, UPFIRDN_NEW)],
+    "torch_utils/ops/conv2d_gradfix.py": [(CONV_WARN_OLD, CONV_WARN_NEW)],
+    "torch_utils/ops/grid_sample_gradfix.py": [(GRID_WARN_OLD, GRID_WARN_NEW)],
 }
+
+
+# equivalent fixes applied by hand (e.g. the sed one-liner from gan_test/README) count as done
+ALREADY_FIXED = {SAMPLER_NEW: "        super().__init__()\n"}
 
 
 def patch_text(text: str, pairs, name: str = "file") -> str:
     for old, new in pairs:
-        if new in text:
+        if new in text or (new in ALREADY_FIXED and ALREADY_FIXED[new] in text and old not in text):
             continue
         if old not in text:
             raise RuntimeError(f"{name} does not match the expected StyleGAN2-ADA version")
@@ -110,7 +126,8 @@ def apply(target: Path = TARGET, check_only: bool = False) -> dict[str, bool]:
     for rel, pairs in PATCHES.items():
         p = target / rel
         text = p.read_text(encoding="utf-8").replace("\r\n", "\n")  # Windows clones may use CRLF
-        done = all(new in text for _, new in pairs)
+        done = all(new in text or (new in ALREADY_FIXED and ALREADY_FIXED[new] in text and old not in text)
+                   for old, new in pairs)
         if not check_only and not done:
             p.write_text(patch_text(text, pairs, rel), encoding="utf-8")
             done = True

@@ -45,7 +45,8 @@ gan:                         # passed to third_party/stylegan2-ada-pytorch/train
   metrics: none              # compute FID separately with scripts (issue 07)
   seed: 0
   gpus: 1
-  workers: 3
+  workers: 2                 # Colab free tier has 2 CPU cores
+  show_warnings: false       # true = show StyleGAN's (harmless) PyTorch-compatibility warnings
   domain_loss:               # SkinGAN term (issue 10); off for the baseline
     enabled: false
     classifier: null         # default: paths.domain_classifier

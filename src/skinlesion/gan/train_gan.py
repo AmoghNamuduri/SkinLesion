@@ -64,6 +64,9 @@ def train(cfg, dry_run: bool = False) -> int:
     sg = None if dry_run else stylegan_dir(cfg)
     cmd = build_command(cfg)
     env = dict(os.environ, SKINGAN_SRC=str(project_root() / "src"), PYTHONUNBUFFERED="1")
+    if not cfg.gan.get("show_warnings", False):
+        # 2021-era StyleGAN on new PyTorch prints harmless fallback/DataLoader warnings; hide them
+        env["PYTHONWARNINGS"] = "ignore"
     outdir = ensure_dir(cfg.gan.outdir or cfg.paths.gan_runs)
     spec = domain_loss_spec(cfg)
     if spec:

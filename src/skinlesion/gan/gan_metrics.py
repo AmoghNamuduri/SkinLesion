@@ -27,7 +27,9 @@ def calc_metrics(cfg, network, metrics: list[str] = QUICK, data=None, mirror: bo
     cmd = [sys.executable, "calc_metrics.py", f"--metrics={','.join(metrics)}", f"--network={network}",
            f"--data={data}", f"--mirror={int(bool(mirror))}"]
     print(" ".join(cmd))
-    subprocess.run(cmd, cwd=stylegan_dir(cfg), check=True)
+    import os
+    env = dict(os.environ) if cfg.gan.get("show_warnings", False) else dict(os.environ, PYTHONWARNINGS="ignore")
+    subprocess.run(cmd, cwd=stylegan_dir(cfg), check=True, env=env)
     return read_metrics(network.parent, network.name)
 
 
