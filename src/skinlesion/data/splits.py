@@ -60,8 +60,10 @@ def lesion_level_split(meta: pd.DataFrame, val_size: float = 0.1, test_size: flo
 
 
 def save_splits(df: pd.DataFrame, splits_dir) -> Path:
+    """Write one CSV per split. Paths are machine-specific, so only ids and labels are stored;
+    ``ensure_splits`` attaches local image paths from the metadata when loading."""
     out = ensure_dir(splits_dir)
-    cols = [c for c in ("image_id", "lesion_id", "dx", "path") if c in df.columns]
+    cols = [c for c in ("image_id", "lesion_id", "dx") if c in df.columns]
     for name in SPLIT_NAMES:
         df.loc[df["split"] == name, cols].to_csv(out / f"ham10000_{name}.csv", index=False)
     return out
@@ -76,18 +78,24 @@ def load_split(splits_dir, name: str) -> pd.DataFrame:
 
 def ensure_splits(cfg, meta: pd.DataFrame | None = None) -> dict[str, pd.DataFrame]:
     """Load the split CSVs, creating them from the metadata if they don't exist yet."""
+    from .metadata import load_metadata
+
     d = resolve(cfg.paths.splits_dir)
+    if meta is None:
+        try:
+            meta = load_metadata(cfg.paths.raw_dir)
+        except FileNotFoundError:
+            meta = None  # no local dataset: splits can still be read, but without image paths
     if not all((d / f"ham10000_{n}.csv").exists() for n in SPLIT_NAMES):
         if meta is None:
-            from .metadata import load_metadata
-            meta = load_metadata(cfg.paths.raw_dir)
+            raise FileNotFoundError(f"no split CSVs in {d} and no HAM10000 metadata in {cfg.paths.raw_dir}")
         s = cfg.split
         save_splits(lesion_level_split(meta, s.val_size, s.test_size, s.seed), d)
     splits = {n: load_split(d, n) for n in SPLIT_NAMES}
-    if meta is not None:  # refresh image paths for this machine
+    if meta is not None:  # attach image paths for this machine
         paths = dict(zip(meta["image_id"], meta["path"]))
         for df in splits.values():
-            df["path"] = df["image_id"].map(paths).fillna(df.get("path"))
+            df["path"] = df["image_id"].map(paths)
     return splits
 
 

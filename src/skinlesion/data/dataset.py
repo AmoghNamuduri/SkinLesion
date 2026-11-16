@@ -31,6 +31,32 @@ def load_image(path: str, size: int) -> np.ndarray:
     return cv2.resize(img, (size, size))
 
 
+def load_manifest(path_or_df) -> "pd.DataFrame":
+    """Read a manifest (columns: image_id, dx, path, …) from a CSV path, a folder containing
+    ``manifest.csv``, or a DataFrame. Real split CSVs and synthetic sets share this format,
+    so downstream code doesn't care whether images are real or generated (roadmap issue 08)."""
+    import pandas as pd
+    from pathlib import Path
+
+    if isinstance(path_or_df, pd.DataFrame):
+        return path_or_df.copy()
+    p = Path(path_or_df)
+    if p.is_dir():
+        p = p / "manifest.csv"
+    df = pd.read_csv(p)
+    # synthetic manifests store paths relative to their folder
+    df["path"] = [str(x) if Path(x).is_absolute() else str(p.parent / x) for x in df["path"]]
+    return df
+
+
+def dataset_from_manifest(manifest, size: int) -> ImageDataset:
+    df = load_manifest(manifest)
+    images = np.stack([load_image(p, size) for p in df["path"]])
+    labels = df["dx"].to_numpy(dtype=str)
+    groups = df.get("lesion_id", df["image_id"]).to_numpy(dtype=str)
+    return ImageDataset(images, labels, groups, np.zeros(len(df), bool))
+
+
 def build_image_dataset(cfg, size: int, hflip: bool | None = None) -> ImageDataset:
     """Images resized to ``size``×``size``; if ``hflip`` (default: config) each image gets a mirrored twin."""
     manifest = load_subset_manifest(cfg.paths.subset_dir)

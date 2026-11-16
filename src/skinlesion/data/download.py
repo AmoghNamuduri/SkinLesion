@@ -95,6 +95,26 @@ def extract_images(raw_dir: Path) -> Path:
     return img_dir
 
 
+ISIC2018_TEST = ("ISIC2018_Task3_Test_Images.zip", "ISIC2018_Task3_Test_GroundTruth.tab")
+
+
+def download_isic2018_test(raw_dir: Path, doi: str) -> Path:
+    """Optional external test set (1,512 images, same 7 classes) from the same Dataverse DOI (issue 03)."""
+    out = ensure_dir(raw_dir / "isic2018_test")
+    with _open(f"{DATAVERSE_API}/datasets/:persistentId/?persistentId={doi}") as resp:
+        files = {f["dataFile"]["filename"]: f["dataFile"] for f in json.load(resp)["data"]["latestVersion"]["files"]}
+    for name in ISIC2018_TEST:
+        info = files[name]
+        url = f"{DATAVERSE_API}/access/datafile/{info['id']}"
+        if name.endswith(".tab"):
+            _stream(url + "?format=original", out / "ISIC2018_Task3_Test_GroundTruth.csv")
+        else:
+            _stream(url, out / name, info.get("filesize"))
+            with zipfile.ZipFile(out / name) as zf:
+                zf.extractall(out)
+    return out
+
+
 def download(cfg) -> Path:
     raw_dir = ensure_dir(cfg.paths.raw_dir)
     src = cfg.download.source
