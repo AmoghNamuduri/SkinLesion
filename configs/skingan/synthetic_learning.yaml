@@ -1,0 +1,17 @@
+# Synthetic learning (roadmap issue 12): train the same classifier on each source,
+# always evaluate on the same REAL test split.
+base: baseline.yaml
+
+synthetic_learning:
+  sources:                     # name -> manifest (folder with manifest.csv) or "real"
+    real: real
+    gan: data/synthetic/baseline
+    skingan: data/synthetic/skingan
+  train_size: null             # null = size of the real training split; same for every source
+  seeds: [0, 1]                # lean plan: 2 seeds
+  select_on_real_val: true     # pick the best epoch on the real validation split
+  epochs: 15
+  bootstrap: 1000              # resamples for 95 % CIs
+
+paths:
+  outputs_dir: outputs
