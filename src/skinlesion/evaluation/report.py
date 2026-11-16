@@ -86,6 +86,49 @@ def build_report(outputs_dir: str | Path) -> Path:
     return path
 
 
+def build_skingan_report(outputs_dir: str | Path) -> Path | None:
+    """``outputs/report-skingan.md`` from whatever SkinGAN results exist (roadmap issue 14)."""
+    from ..gan.gan_metrics import read_metrics
+
+    out = resolve(outputs_dir)
+    dom = out / "domain_classifier" / "results.json"
+    syn = out / "synthetic_learning" / "results.json"
+    runs = sorted(p for p in (out / "gan").glob("*/*") if p.is_dir() and list(p.glob("metric-*.jsonl")))
+    if not (dom.exists() or syn.exists() or runs):
+        return None
+    md = ["# SkinGAN results", ""]
+    if runs:
+        md += ["## GAN quality", "", _row("Model", "Run", "FID10k", "FID50k", "KID50k", "Precision", "Recall"),
+               _row(*["---"] * 7)]
+        for r in runs:
+            m = read_metrics(r)
+            f = lambda k, d=2: f"{m[k]:.{d}f}" if k in m else "—"  # noqa: E731
+            md.append(_row(r.parent.name, r.name, f("fid10k_full"), f("fid50k_full"), f("kid50k_full", 4),
+                           f("pr50k3_full_precision", 3), f("pr50k3_full_recall", 3)))
+        md.append("")
+    if dom.exists():
+        d = load_json(dom)
+        t = d["test"]
+        md += ["## Domain classifier (real data)", "",
+               f"DenseNet-121, {d['n_train']} training images, best epoch {d['best_epoch']}: "
+               f"test AUC **{t['auc']:.3f}** (95 % CI {t['auc_ci']['low']:.3f}–{t['auc_ci']['high']:.3f}), "
+               f"balanced accuracy {t['balanced_accuracy']:.3f}.", ""]
+    if syn.exists():
+        s = load_json(syn)
+        md += ["## Synthetic learning (test on real images)", "",
+               _row("Training source", "n train", "AUC mean ± sd", "95 % CI (seed 0)"), _row(*["---"] * 4)]
+        for name, v in s["sources"].items():
+            ci = v["runs"][0]["test"]["auc_ci"]
+            md.append(_row(name, v["n_train"], f"{v['auc_mean']:.3f} ± {v['auc_sd']:.3f}",
+                           f"{ci['low']:.3f}–{ci['high']:.3f}"))
+        sp = ref.SPINEGAN_AUC
+        md += ["", f"_SpineGAN for reference (spine X-rays, binary): real {sp['real']}, GAN {sp['gan']}, "
+                   f"SpineGAN {sp['spinegan']}._", ""]
+    path = out / "report-skingan.md"
+    path.write_text("\n".join(md), encoding="utf-8")
+    return path
+
+
 def build_original_report(outputs_dir: str | Path) -> Path:
     """``outputs/report-original.md``: only the numbers published in the paper (no results of ours)."""
     out = resolve(outputs_dir)

@@ -45,3 +45,7 @@ TABLE7_CNN_REPORT = {
 }
 
 INCEPTION_V3_ACCURACY = 95.14
+
+# SpineGAN (reference method for SkinGAN): synthetic-learning AUC on the real test set,
+# VinDr-SpineXR normal vs abnormal (github.com/Ethan-schonfeld/SpineGAN README)
+SPINEGAN_AUC = {"real": 0.856, "gan": 0.814, "spinegan": 0.830}
