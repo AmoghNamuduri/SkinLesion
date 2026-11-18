@@ -1,0 +1,13 @@
+# Classification experiment on Colab: the paper's comparison (Section IV-A).
+# Synthetic images are generated into /content/synthetic/<arm> by the notebook.
+base: ../configs/skingan/synthetic_learning.yaml
+
+synthetic_learning:
+  sources:
+    real: real
+    traditional_aug: {topup: duplicate, target: 1000}
+    real_plus_gan: {topup: /content/synthetic/baseline, target: 1000}
+    real_plus_skingan: {topup: /content/synthetic/skingan, target: 1000}
+    skingan_only: /content/synthetic/skingan
+  seeds: [0]         # 1 seed fits a free Colab session; use [0, 1] if you have time
+  epochs: 15

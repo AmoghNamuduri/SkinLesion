@@ -1,0 +1,9 @@
+# Arm 1 — standard GAN (no classifier feedback), continued from the shared checkpoint.
+# The notebook sets paths.* (Google Drive), gan.resume and gan.kimg at run time.
+base: ../configs/skingan/baseline.yaml
+
+gan:
+  snap: 10           # snapshot every 40 kimg (fewer large .pkl files on Drive)
+  workers: 2
+  domain_loss:
+    enabled: false

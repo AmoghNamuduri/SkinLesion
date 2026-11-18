@@ -1,0 +1,11 @@
+# Arm 2 — SkinGAN: identical to colab_baseline.yaml except the classifier-guided loss
+#   L_G = L_adv + λ · CE(DenseNet(G(z, c)), c)
+# continued from the SAME shared checkpoint for the SAME number of kimg.
+base: ../configs/skingan/skingan.yaml
+
+gan:
+  snap: 10
+  workers: 2
+  domain_loss:
+    enabled: true
+    weight: 0.1      # λ (SpineGAN: 0.1); the notebook can override it
