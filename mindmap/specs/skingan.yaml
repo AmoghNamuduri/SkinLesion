@@ -169,6 +169,20 @@ clusters:
       - "make_real_grid.py: laptop preview of the real 256² training images per class"
       - "show_results.py: progression strip, real | generated grid, per-class grid"
 
+  - id: skingan_run
+    name: SkinGAN run (Colab)
+    color: magenta
+    folder: skinGan/
+    x: 160
+    y: 1180
+    cols: 1
+    description: "The full SkinGAN experiment on Colab: shared checkpoint, domain classifier, standard GAN vs SkinGAN, synthetic images, classification comparison, report."
+    functionalities:
+      - "Both GANs continue from the same checkpoint for the same kimg; only the classifier loss differs"
+      - "Every step resumes across Colab sessions and skips itself when done"
+      - "Classification comparison: real / traditional aug / +GAN / +SkinGAN / SkinGAN only, on real test images"
+      - "Pictures: real | standard GAN | SkinGAN per class, progression strips"
+
   - id: artifacts
     name: Data & artifacts
     color: gray
@@ -263,6 +277,14 @@ nodes:
   - {id: gan_test/make_real_grid.py, cluster: gan_test, status: planned, doc: "Laptop preview of the real training images per class."}
   - {id: gan_test/show_results.py, cluster: gan_test, status: planned, doc: "progression.png, real_vs_generated.png, class_grid.png from a run."}
 
+  # SkinGAN run (Colab)
+  - {id: skinGan/SkinGAN_Colab.ipynb, label: SkinGAN_Colab.ipynb, cluster: skingan_run, status: planned, kind: notebook,
+     doc: "Steps A–F: domain classifier, standard GAN, SkinGAN, synthetic images, classification experiment, report."}
+  - {id: skinGan/colab_baseline.yaml, cluster: skingan_run, status: planned, kind: yaml, doc: "Standard-GAN arm (no classifier loss)."}
+  - {id: skinGan/colab_skingan.yaml, cluster: skingan_run, status: planned, kind: yaml, doc: "SkinGAN arm (classifier loss on, λ = 0.1)."}
+  - {id: skinGan/colab_experiment.yaml, cluster: skingan_run, status: planned, kind: yaml, doc: "Five training sets compared on real test images."}
+  - {id: skinGan/compare_grids.py, cluster: skingan_run, status: planned, doc: "Real | standard GAN | SkinGAN per class + progression strips."}
+
   # artifacts
   - {id: art/ham10000, label: HAM10000 raw + metadata, cluster: artifacts, status: data, kind: artifact, doc: "data/raw/: 10,015 images + HAM10000_metadata.csv."}
   - {id: art/splits, label: split CSVs (train/val/test), cluster: artifacts, status: data, kind: artifact, issue: 3, doc: "data/splits/ham10000_{train,val,test}.csv, lesion-level."}
@@ -290,6 +312,21 @@ edges:
   - [configs/skingan/synthetic_learning.yaml, configs/skingan/baseline.yaml, inherits]
   - [configs/skingan/baseline.yaml, configs/paper.yaml, inherits]
   - [gan_test/test_config.yaml, configs/skingan/baseline.yaml, inherits]
+  # SkinGAN run
+  - [skinGan/colab_baseline.yaml, configs/skingan/baseline.yaml, inherits]
+  - [skinGan/colab_skingan.yaml, configs/skingan/skingan.yaml, inherits]
+  - [skinGan/colab_experiment.yaml, configs/skingan/synthetic_learning.yaml, inherits]
+  - [skinGan/SkinGAN_Colab.ipynb, scripts/train_domain_classifier.py, calls]
+  - [skinGan/SkinGAN_Colab.ipynb, scripts/train_gan.py, calls]
+  - [skinGan/SkinGAN_Colab.ipynb, scripts/generate_synthetic.py, calls]
+  - [skinGan/SkinGAN_Colab.ipynb, scripts/run_synthetic_learning.py, calls]
+  - [skinGan/SkinGAN_Colab.ipynb, skinGan/compare_grids.py, calls]
+  - [skinGan/SkinGAN_Colab.ipynb, skinGan/colab_skingan.yaml, config, "reads config"]
+  - [skinGan/SkinGAN_Colab.ipynb, skinGan/colab_baseline.yaml, config, "reads config"]
+  - [skinGan/SkinGAN_Colab.ipynb, skinGan/colab_experiment.yaml, config, "reads config"]
+  - [skinGan/SkinGAN_Colab.ipynb, src/skinlesion/gan/train_gan.py, import, "resume_plan / kimg_done"]
+  - [skinGan/compare_grids.py, src/skinlesion/gan/generate.py, import]
+  - [skinGan/compare_grids.py, src/skinlesion/gan/visualize.py, import]
   # gan test
   - [gan_test/SkinGAN_Colab_Test.ipynb, third_party/setup_stylegan.py, calls]
   - [gan_test/SkinGAN_Colab_Test.ipynb, scripts/export_gan_dataset.py, calls]

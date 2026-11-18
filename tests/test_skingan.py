@@ -197,11 +197,58 @@ def test_classifier_training_and_synthetic_learning(fake_cfg, tmp_path):
     model, meta = load_classifier(res["checkpoint"])
     assert meta["classes"] == classes and meta["image_size"] == 32
 
-    cfg.synthetic_learning = {"sources": {"real": "real", "gan": str(tmp_path / "syn"), "missing": str(tmp_path / "nope")},
+    cfg.synthetic_learning = {"sources": {"real": "real", "gan": str(tmp_path / "syn"), "missing": str(tmp_path / "nope"),
+                                          "plus_gan": {"topup": str(tmp_path / "syn"), "target": 9}},
                               "train_size": None, "seeds": [0], "select_on_real_val": True, "epochs": 1, "bootstrap": 20}
     out = run_synthetic_learning(cfg)
-    assert set(out["sources"]) == {"real", "gan"}  # missing sources are skipped, not fatal
+    assert set(out["sources"]) == {"real", "gan", "plus_gan"}  # missing sources are skipped, not fatal
+    assert out["sources"]["plus_gan"]["n_synthetic"] > 0
     assert (tmp_path / "out" / "synthetic_learning" / "results.json").exists()
+
+    from skinlesion.evaluation.report import build_skingan_report
+    report = build_skingan_report(tmp_path / "out").read_text(encoding="utf-8")
+    assert "Classification on real test images" in report and "plus_gan" in report and "Recall df" in report
+
+
+def test_resume_plan_across_sessions(tmp_path):
+    from skinlesion.gan.train_gan import kimg_done, prune_snapshots, resume_plan
+    runs = tmp_path / "runs"
+    assert resume_plan(runs, "shared.pkl", 300) == {"done": 0, "remaining": 300, "resume": "shared.pkl", "finished": False}
+    s1, s2 = runs / "00000-a", runs / "00001-a"
+    for d, ks in ((s1, [0, 40, 80, 120]), (s2, [0, 40])):  # session 1 died after 120, session 2 after 40
+        d.mkdir(parents=True)
+        for k in ks:
+            (d / f"network-snapshot-{k:06d}.pkl").write_bytes(b"x")
+            (d / f"fakes{k:06d}.png").write_bytes(b"x")
+    plan = resume_plan(runs, "shared.pkl", 300)
+    assert plan["done"] == 160 and plan["remaining"] == 140 and plan["resume"].endswith("00001-a/network-snapshot-000040.pkl".replace("/", __import__("os").sep))
+    assert len(prune_snapshots(runs, keep=2)) == 4
+    assert kimg_done(runs) == 160  # progress survives pruning (fakes*.png still count)
+
+
+def test_topup_sources():
+    from skinlesion.training.synthetic_learning import topup
+    real = pd.DataFrame({"image_id": [f"r{i}" for i in range(13)], "dx": ["df"] * 3 + ["nv"] * 10, "path": "x"})
+    syn = pd.DataFrame({"image_id": [f"s{i}" for i in range(20)], "dx": ["df"] * 10 + ["nv"] * 10, "path": "y"})
+    t = topup(real, 8, syn)
+    assert (t["dx"] == "df").sum() == 8 and (t["dx"] == "nv").sum() == 10        # nv already above target
+    assert (t["source"] == "synthetic").sum() == 5 and set(t.loc[t.source == "synthetic", "image_id"]) <= set(syn.image_id)
+    d = topup(real, 8, "duplicate")
+    assert (d["source"] == "duplicate").sum() == 5 and set(d.loc[d.source == "duplicate", "image_id"]) <= {"r0", "r1", "r2"}
+
+
+def test_domain_loss_spec_reads_classifier_meta(fake_cfg, tmp_path):
+    from skinlesion.gan.train_gan import domain_loss_spec
+    ckpt = tmp_path / "clf.pt"
+    torch.save({"state_dict": {}, "meta": {"num_classes": 7, "classes": ["akiec", "bcc", "bkl", "df", "mel", "nv", "vasc"],
+                                           "image_size": 224}}, ckpt)
+    cfg = skingan_cfg(fake_cfg, tmp_path, ["gan.domain_loss.enabled=true", f"paths.domain_classifier={ckpt}"])
+    spec = domain_loss_spec(cfg)
+    assert spec == {"classifier": str(ckpt), "weight": 0.1, "class_map": None}
+    for name in ("colab_baseline.yaml", "colab_skingan.yaml", "colab_experiment.yaml"):  # skinGan configs load
+        c = load_config(ROOT / "skinGan" / name)
+        assert c.gan.snap == 10
+    assert load_config(ROOT / "skinGan" / "colab_skingan.yaml").gan.domain_loss.enabled is True
 
 
 def test_densenet_shapes():

@@ -61,7 +61,7 @@ window.GRAPHS = {
      "configs/variations/no_leakage.yaml"
     ],
     "folder": "configs/",
-    "loc": 159,
+    "loc": 164,
     "color": "amber",
     "x": 1560,
     "y": 150,
@@ -114,7 +114,7 @@ window.GRAPHS = {
      "src/skinlesion/data/splits.py"
     ],
     "folder": "src/skinlesion/data/",
-    "loc": 402,
+    "loc": 409,
     "color": "blue",
     "x": 220,
     "y": 580,
@@ -187,7 +187,7 @@ window.GRAPHS = {
      "src/skinlesion/training/synthetic_learning.py"
     ],
     "folder": "src/skinlesion/training/",
-    "loc": 373,
+    "loc": 407,
     "color": "orange",
     "x": 900,
     "y": 560,
@@ -211,7 +211,7 @@ window.GRAPHS = {
      "src/skinlesion/evaluation/report.py"
     ],
     "folder": "src/skinlesion/evaluation/",
-    "loc": 370,
+    "loc": 381,
     "color": "green",
     "x": 1580,
     "y": 600,
@@ -240,7 +240,7 @@ window.GRAPHS = {
      "src/skinlesion/gan/visualize.py"
     ],
     "folder": "src/skinlesion/gan/",
-    "loc": 434,
+    "loc": 470,
     "color": "red",
     "x": 1230,
     "y": 810,
@@ -262,7 +262,7 @@ window.GRAPHS = {
      "tests/test_units.py"
     ],
     "folder": "tests/",
-    "loc": 274,
+    "loc": 315,
     "color": "brown",
     "x": 260,
     "y": 150,
@@ -470,7 +470,7 @@ window.GRAPHS = {
      {
       "name": "save_splits",
       "kind": "def",
-      "doc": ""
+      "doc": "Write one CSV per split. Paths are machine-specific, so only ids and labels are stored;"
      },
      {
       "name": "load_split",
@@ -496,7 +496,7 @@ window.GRAPHS = {
     "constants": [
      "SPLIT_NAMES"
     ],
-    "loc": 85
+    "loc": 92
    },
    {
     "id": "src/skinlesion/evaluation/memorization.py",
@@ -631,7 +631,7 @@ window.GRAPHS = {
      }
     ],
     "constants": [],
-    "loc": 152
+    "loc": 163
    },
    {
     "id": "src/skinlesion/features/descriptors.py",
@@ -802,7 +802,7 @@ window.GRAPHS = {
      "QUICK",
      "FULL"
     ],
-    "loc": 34
+    "loc": 36
    },
    {
     "id": "src/skinlesion/gan/generate.py",
@@ -858,6 +858,21 @@ window.GRAPHS = {
       "doc": "Newest network-snapshot-*.pkl under a runs folder (searches all run subfolders)."
      },
      {
+      "name": "kimg_done",
+      "kind": "def",
+      "doc": "Total kimg trained in a runs folder = Σ over run subfolders of their last snapshot."
+     },
+     {
+      "name": "resume_plan",
+      "kind": "def",
+      "doc": "What to run next for one arm: resume from its newest snapshot (or start_pkl if it"
+     },
+     {
+      "name": "prune_snapshots",
+      "kind": "def",
+      "doc": "Delete all but the newest keep network snapshots (they're large; Drive is 15 GB)."
+     },
+     {
       "name": "build_command",
       "kind": "def",
       "doc": ""
@@ -873,8 +888,10 @@ window.GRAPHS = {
       "doc": ""
      }
     ],
-    "constants": [],
-    "loc": 66
+    "constants": [
+     "_SNAP_RE"
+    ],
+    "loc": 100
    },
    {
     "id": "src/skinlesion/gan/visualize.py",
@@ -1128,6 +1145,11 @@ window.GRAPHS = {
     "doc": "Synthetic-learning experiment (roadmap issue 12) — the headline SkinGAN result.",
     "symbols": [
      {
+      "name": "topup",
+      "kind": "def",
+      "doc": "Real images plus extra rows for every class with fewer than target images."
+     },
+     {
       "name": "source_frame",
       "kind": "def",
       "doc": ""
@@ -1139,7 +1161,7 @@ window.GRAPHS = {
      }
     ],
     "constants": [],
-    "loc": 42
+    "loc": 76
    },
    {
     "id": "src/skinlesion/utils/config.py",
@@ -1481,13 +1503,28 @@ window.GRAPHS = {
       "doc": "Domain classifier → generated set → synthetic-learning comparison, end to end on tiny data."
      },
      {
+      "name": "test_resume_plan_across_sessions",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "test_topup_sources",
+      "kind": "def",
+      "doc": ""
+     },
+     {
+      "name": "test_domain_loss_spec_reads_classifier_meta",
+      "kind": "def",
+      "doc": ""
+     },
+     {
       "name": "test_densenet_shapes",
       "kind": "def",
       "doc": ""
      }
     ],
     "constants": [],
-    "loc": 169
+    "loc": 210
    },
    {
     "id": "tests/test_units.py",
@@ -1620,7 +1657,7 @@ window.GRAPHS = {
      }
     ],
     "constants": [],
-    "loc": 61
+    "loc": 62
    },
    {
     "id": "configs/skingan/skingan.yaml",
@@ -1648,7 +1685,7 @@ window.GRAPHS = {
     "label": "synthetic_learning.yaml",
     "cluster": "configs",
     "kind": "yaml",
-    "doc": "Synthetic learning (roadmap issue 12): train the same classifier on each source, always evaluate on the same REAL test split.",
+    "doc": "Classification experiment (roadmap issue 12): train the same DenseNet-121 on each training set, always evaluate on the same REAL test split.",
     "symbols": [
      {
       "name": "synthetic_learning",
@@ -1662,7 +1699,7 @@ window.GRAPHS = {
      }
     ],
     "constants": [],
-    "loc": 13
+    "loc": 17
    },
    {
     "id": "configs/variations/no_leakage.yaml",
@@ -2422,6 +2459,12 @@ window.GRAPHS = {
    {
     "source": "tests/test_skingan.py",
     "target": "src/skinlesion/evaluation/metrics.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "tests/test_skingan.py",
+    "target": "src/skinlesion/evaluation/report.py",
     "kind": "import",
     "label": ""
    },
@@ -4132,6 +4175,31 @@ window.GRAPHS = {
     "issues": []
    },
    {
+    "id": "skingan_run",
+    "name": "SkinGAN run (Colab)",
+    "description": "The full SkinGAN experiment on Colab: shared checkpoint, domain classifier, standard GAN vs SkinGAN, synthetic images, classification comparison, report.",
+    "functionalities": [
+     "Both GANs continue from the same checkpoint for the same kimg; only the classifier loss differs",
+     "Every step resumes across Colab sessions and skips itself when done",
+     "Classification comparison: real / traditional aug / +GAN / +SkinGAN / SkinGAN only, on real test images",
+     "Pictures: real | standard GAN | SkinGAN per class, progression strips"
+    ],
+    "folder": "skinGan/",
+    "color": "magenta",
+    "x": 160,
+    "y": 1180,
+    "cols": 1,
+    "files": [
+     "skinGan/SkinGAN_Colab.ipynb",
+     "skinGan/colab_baseline.yaml",
+     "skinGan/colab_skingan.yaml",
+     "skinGan/colab_experiment.yaml",
+     "skinGan/compare_grids.py"
+    ],
+    "loc": 0,
+    "issues": []
+   },
+   {
     "id": "artifacts",
     "name": "Data & artifacts",
     "description": "Files that connect the stages; each is produced by one module and consumed by others.",
@@ -4912,6 +4980,76 @@ window.GRAPHS = {
     "symbols": []
    },
    {
+    "id": "skinGan/SkinGAN_Colab.ipynb",
+    "label": "SkinGAN_Colab.ipynb",
+    "cluster": "skingan_run",
+    "kind": "notebook",
+    "status": "built",
+    "issue": null,
+    "issue_url": "",
+    "url": "../skinGan/SkinGAN_Colab.ipynb",
+    "doc": "Steps A–F: domain classifier, standard GAN, SkinGAN, synthetic images, classification experiment, report.",
+    "constants": [],
+    "loc": 0,
+    "symbols": []
+   },
+   {
+    "id": "skinGan/colab_baseline.yaml",
+    "label": "colab_baseline.yaml",
+    "cluster": "skingan_run",
+    "kind": "yaml",
+    "status": "built",
+    "issue": null,
+    "issue_url": "",
+    "url": "../skinGan/colab_baseline.yaml",
+    "doc": "Standard-GAN arm (no classifier loss).",
+    "constants": [],
+    "loc": 0,
+    "symbols": []
+   },
+   {
+    "id": "skinGan/colab_skingan.yaml",
+    "label": "colab_skingan.yaml",
+    "cluster": "skingan_run",
+    "kind": "yaml",
+    "status": "built",
+    "issue": null,
+    "issue_url": "",
+    "url": "../skinGan/colab_skingan.yaml",
+    "doc": "SkinGAN arm (classifier loss on, λ = 0.1).",
+    "constants": [],
+    "loc": 0,
+    "symbols": []
+   },
+   {
+    "id": "skinGan/colab_experiment.yaml",
+    "label": "colab_experiment.yaml",
+    "cluster": "skingan_run",
+    "kind": "yaml",
+    "status": "built",
+    "issue": null,
+    "issue_url": "",
+    "url": "../skinGan/colab_experiment.yaml",
+    "doc": "Five training sets compared on real test images.",
+    "constants": [],
+    "loc": 0,
+    "symbols": []
+   },
+   {
+    "id": "skinGan/compare_grids.py",
+    "label": "compare_grids.py",
+    "cluster": "skingan_run",
+    "kind": "python",
+    "status": "built",
+    "issue": null,
+    "issue_url": "",
+    "url": "../skinGan/compare_grids.py",
+    "doc": "Real | standard GAN | SkinGAN per class + progression strips.",
+    "constants": [],
+    "loc": 0,
+    "symbols": []
+   },
+   {
     "id": "art/ham10000",
     "label": "HAM10000 raw + metadata",
     "cluster": "artifacts",
@@ -5107,6 +5245,90 @@ window.GRAPHS = {
     "source": "gan_test/test_config.yaml",
     "target": "configs/skingan/baseline.yaml",
     "kind": "inherits",
+    "label": ""
+   },
+   {
+    "source": "skinGan/colab_baseline.yaml",
+    "target": "configs/skingan/baseline.yaml",
+    "kind": "inherits",
+    "label": ""
+   },
+   {
+    "source": "skinGan/colab_skingan.yaml",
+    "target": "configs/skingan/skingan.yaml",
+    "kind": "inherits",
+    "label": ""
+   },
+   {
+    "source": "skinGan/colab_experiment.yaml",
+    "target": "configs/skingan/synthetic_learning.yaml",
+    "kind": "inherits",
+    "label": ""
+   },
+   {
+    "source": "skinGan/SkinGAN_Colab.ipynb",
+    "target": "scripts/train_domain_classifier.py",
+    "kind": "calls",
+    "label": ""
+   },
+   {
+    "source": "skinGan/SkinGAN_Colab.ipynb",
+    "target": "scripts/train_gan.py",
+    "kind": "calls",
+    "label": ""
+   },
+   {
+    "source": "skinGan/SkinGAN_Colab.ipynb",
+    "target": "scripts/generate_synthetic.py",
+    "kind": "calls",
+    "label": ""
+   },
+   {
+    "source": "skinGan/SkinGAN_Colab.ipynb",
+    "target": "scripts/run_synthetic_learning.py",
+    "kind": "calls",
+    "label": ""
+   },
+   {
+    "source": "skinGan/SkinGAN_Colab.ipynb",
+    "target": "skinGan/compare_grids.py",
+    "kind": "calls",
+    "label": ""
+   },
+   {
+    "source": "skinGan/SkinGAN_Colab.ipynb",
+    "target": "skinGan/colab_skingan.yaml",
+    "kind": "config",
+    "label": "reads config"
+   },
+   {
+    "source": "skinGan/SkinGAN_Colab.ipynb",
+    "target": "skinGan/colab_baseline.yaml",
+    "kind": "config",
+    "label": "reads config"
+   },
+   {
+    "source": "skinGan/SkinGAN_Colab.ipynb",
+    "target": "skinGan/colab_experiment.yaml",
+    "kind": "config",
+    "label": "reads config"
+   },
+   {
+    "source": "skinGan/SkinGAN_Colab.ipynb",
+    "target": "src/skinlesion/gan/train_gan.py",
+    "kind": "import",
+    "label": "resume_plan / kimg_done"
+   },
+   {
+    "source": "skinGan/compare_grids.py",
+    "target": "src/skinlesion/gan/generate.py",
+    "kind": "import",
+    "label": ""
+   },
+   {
+    "source": "skinGan/compare_grids.py",
+    "target": "src/skinlesion/gan/visualize.py",
+    "kind": "import",
     "label": ""
    },
    {
