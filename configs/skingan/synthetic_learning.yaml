@@ -1,14 +1,18 @@
-# Synthetic learning (roadmap issue 12): train the same classifier on each source,
-# always evaluate on the same REAL test split.
+# Classification experiment (roadmap issue 12): train the same DenseNet-121 on each
+# training set, always evaluate on the same REAL test split.
 base: baseline.yaml
 
 synthetic_learning:
-  sources:                     # name -> manifest (folder with manifest.csv) or "real"
-    real: real
-    gan: data/synthetic/baseline
-    skingan: data/synthetic/skingan
-  train_size: null             # null = size of the real training split; same for every source
-  seeds: [0, 1]                # lean plan: 2 seeds
+  sources:
+    # paper's main comparison: minority classes topped up to `target` images
+    real: real                                                     # no augmentation of class counts
+    traditional_aug: {topup: duplicate, target: 1000}              # copies + flips/rotations/crops
+    real_plus_gan: {topup: data/synthetic/baseline, target: 1000}  # standard GAN (no classifier feedback)
+    real_plus_skingan: {topup: data/synthetic/skingan, target: 1000}
+    # SpineGAN-style check: synthetic images only
+    skingan_only: data/synthetic/skingan
+  train_size: null             # synthetic-only sources: same size as the real training set
+  seeds: [0, 1]
   select_on_real_val: true     # pick the best epoch on the real validation split
   epochs: 15
   bootstrap: 1000              # resamples for 95 % CIs

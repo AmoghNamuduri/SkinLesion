@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -26,6 +27,44 @@ def latest_snapshot(run_root) -> Path | None:
     """Newest network-snapshot-*.pkl under a runs folder (searches all run subfolders)."""
     snaps = sorted(resolve(run_root).glob("*/network-snapshot-*.pkl"), key=lambda p: (p.parent.name, p.name))
     return snaps[-1] if snaps else None
+
+
+# ---------------------------------------------------------------------------
+# Multi-session training (Colab): every resume starts a new StyleGAN run folder whose
+# kimg counter restarts at 0, so progress is the sum over run folders.
+# ---------------------------------------------------------------------------
+_SNAP_RE = re.compile(r"^(?:network-snapshot-|fakes)(\d{6})\.(?:pkl|png)$")
+
+
+def kimg_done(run_root) -> int:
+    """Total kimg trained in a runs folder = Σ over run subfolders of their last snapshot.
+    Counts ``fakes*.png`` too, so pruned .pkl files don't lose progress."""
+    root = resolve(run_root)
+    if not root.exists():
+        return 0
+    total = 0
+    for run in sorted(d for d in root.iterdir() if d.is_dir()):
+        ks = [int(m.group(1)) for f in run.iterdir() if (m := _SNAP_RE.match(f.name))]
+        total += max(ks, default=0)
+    return total
+
+
+def resume_plan(run_root, start_pkl, target_kimg: int) -> dict:
+    """What to run next for one arm: resume from its newest snapshot (or ``start_pkl`` if it
+    hasn't started) for the kimg still missing to reach ``target_kimg``."""
+    done = kimg_done(run_root)
+    latest = latest_snapshot(run_root) if resolve(run_root).exists() else None
+    return {"done": done, "remaining": max(0, int(target_kimg) - done),
+            "resume": str(latest or start_pkl), "finished": done >= int(target_kimg)}
+
+
+def prune_snapshots(run_root, keep: int = 2) -> list[Path]:
+    """Delete all but the newest ``keep`` network snapshots (they're large; Drive is 15 GB)."""
+    snaps = sorted(resolve(run_root).glob("*/network-snapshot-*.pkl"), key=lambda p: (p.parent.name, p.name))
+    removed = snaps[:-keep] if keep > 0 else snaps
+    for p in removed:
+        p.unlink()
+    return removed
 
 
 def build_command(cfg) -> list[str]:

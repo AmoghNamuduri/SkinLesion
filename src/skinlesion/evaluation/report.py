@@ -115,12 +115,23 @@ def build_skingan_report(outputs_dir: str | Path) -> Path | None:
                f"balanced accuracy {t['balanced_accuracy']:.3f}.", ""]
     if syn.exists():
         s = load_json(syn)
-        md += ["## Synthetic learning (test on real images)", "",
-               _row("Training source", "n train", "AUC mean ± sd", "95 % CI (seed 0)"), _row(*["---"] * 4)]
+        rare = ["df", "vasc", "akiec"]
+        md += ["## Classification on real test images", "",
+               "_Mean over seeds. Recall columns are the rare classes the paper focuses on._", "",
+               _row("Training set", "n train (synthetic)", "Accuracy", "Balanced acc", "Macro F1",
+                    "AUC ± sd", "AUC 95 % CI (seed 0)", *[f"Recall {c}" for c in rare]),
+               _row(*["---"] * (7 + len(rare)))]
         for name, v in s["sources"].items():
-            ci = v["runs"][0]["test"]["auc_ci"]
-            md.append(_row(name, v["n_train"], f"{v['auc_mean']:.3f} ± {v['auc_sd']:.3f}",
-                           f"{ci['low']:.3f}–{ci['high']:.3f}"))
+            tests = [r["test"] for r in v["runs"]]
+            mean = lambda f: sum(f(t) for t in tests) / len(tests)  # noqa: E731
+            ci = tests[0]["auc_ci"]
+            per_class = tests[0]["hard"]["per_class"]
+            recalls = [f"{mean(lambda t, c=c: t['hard']['per_class'][c]['recall']):.2f}" if c in per_class else "—"
+                       for c in rare]
+            md.append(_row(name, f"{v['n_train']} ({v.get('n_synthetic', 0)})",
+                           f"{mean(lambda t: t['accuracy']):.3f}", f"{mean(lambda t: t['balanced_accuracy']):.3f}",
+                           f"{mean(lambda t: t['hard']['macro']['f1']):.3f}",
+                           f"{v['auc_mean']:.3f} ± {v['auc_sd']:.3f}", f"{ci['low']:.3f}–{ci['high']:.3f}", *recalls))
         sp = ref.SPINEGAN_AUC
         md += ["", f"_SpineGAN for reference (spine X-rays, binary): real {sp['real']}, GAN {sp['gan']}, "
                    f"SpineGAN {sp['spinegan']}._", ""]
